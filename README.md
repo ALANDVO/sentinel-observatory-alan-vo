@@ -24,7 +24,7 @@ Sentinel Observatory turns documents or topics into native PowerPoint decks thro
 | **Attribution Guard** | Structural integrity check with actionable diagnostics (cross-platform, fail-closed, structured error codes ATTR-001 through ATTR-006) |
 | **Prompt & Locale Audit** | Token-budget, locale dictionary placeholder parity, and doc structural translation drift audit (#302, #303, #304) |
 | **Audio Narration** | Synthesize deterministic offline RIFF/WAVE PCM audio tracks from speaker notes with 4 voices and variable speech pacing (80–300 WPM) |
-| **Native PPTX Export** | Compile to real `.pptx` with native bar/line/pie charts, styled tables, slide transitions, and speaker notes via `python-pptx` |
+| **Native PPTX Export** | Compile to real `.pptx` with smart auto-alignment, dynamic bounding boxes, typography scaling, native bar/line/pie charts, styled tables, slide transitions, and speaker notes |
 | **Template Studio** | Register custom `.pptx` templates; scan master slides, placeholder layouts, and theme palettes |
 | **Advisory LLM** | Opt-in explanations via OpenAI-compatible, Anthropic, or Gemini adapters; clearly labeled advisory, never fabricated |
 
@@ -162,6 +162,7 @@ cd frontend && npm run build
 | `POST` | `/api/decks/{id}/slides` | Bearer (operator) | Add slide to deck |
 | `PATCH` | `/api/decks/{id}/slides/{sid}` | Bearer (operator) | Update slide fields |
 | `GET` | `/api/decks/{id}/export/pptx` | Bearer (viewer) | Download compiled `.pptx` |
+| `GET` | `/api/decks/{id}/layout` | Bearer (viewer) | Slide smart layout blueprints, density classes, and typography specs |
 | `POST` | `/api/evaluations/{id}/cognitive` | Bearer (viewer) | Cognitive load evaluation |
 | `POST` | `/api/evaluations/{id}/fidelity` | Bearer (viewer) | Data fidelity audit |
 | `POST` | `/api/evaluations/{id}/attribution` | Bearer (viewer) | Attribution guard check |

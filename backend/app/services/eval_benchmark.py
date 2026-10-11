@@ -7,11 +7,11 @@ from __future__ import annotations
 
 import json
 import sys
-from dataclasses import dataclass, field, asdict
-from typing import Any
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
-from backend.app.services.evaluator import EvaluationEngine, _mece_alignment
+from backend.app.services.evaluator import EvaluationEngine
 
 _BENCHMARK_DATA_PATH = Path(__file__).parent / "benchmark_decks.json"
 with open(_BENCHMARK_DATA_PATH, "r") as f:
@@ -44,81 +44,58 @@ class BenchmarkReport:
 
 
 def run_benchmark(decks: list[dict[str, Any]] | None = None) -> BenchmarkReport:
-    """Run evaluation benchmark against the labeled dataset and return a report."""
     engine = EvaluationEngine()
     dataset = decks if decks is not None else BENCHMARK_DECKS
     results: list[BenchmarkResult] = []
-    passed = 0
-    failed = 0
+    passed = failed = 0
     failure_cases: list[str] = []
 
     for spec in dataset:
-        deck_id = spec["deck_id"]
-        label = spec.get("label", deck_id)
-        slides = spec["slides"]
-        report = engine.evaluate_deck(deck_id, slides)
-        fidelity = engine.check_data_fidelity(slides, spec.get("source_data", []))
+        deck_id, label, slides = spec["deck_id"], spec.get("label", spec["deck_id"]), spec["slides"]
+        rep = engine.evaluate_deck(deck_id, slides)
+        fid = engine.check_data_fidelity(slides, spec.get("source_data", []))
+        ch_pass, ch_fail = [], []
 
-        checks_passed: list[str] = []
-        checks_failed: list[str] = []
+        checks = [
+            ("expected_cognitive_score_min", rep.overall_cognitive_score, lambda v, t: v >= t, "cognitive_score", ">="),
+            ("expected_cognitive_score_max", rep.overall_cognitive_score, lambda v, t: v <= t, "cognitive_score", "<="),
+            ("expected_mece_min", rep.mece_alignment_score, lambda v, t: v >= t, "mece_score", ">="),
+        ]
+        for key, val, cond, op, sym in checks:
+            if (target := spec.get(key)) is not None:
+                (ch_pass if cond(val, target) else ch_fail).append(f"{op} {val:.3f} {sym} {target}")
 
-        min_cog = spec.get("expected_cognitive_score_min")
-        max_cog = spec.get("expected_cognitive_score_max")
-        if min_cog is not None:
-            if report.overall_cognitive_score < min_cog:
-                checks_failed.append(f"cognitive_score {report.overall_cognitive_score:.3f} < {min_cog}")
-            else:
-                checks_passed.append(f"cognitive_score {report.overall_cognitive_score:.3f} >= {min_cog}")
-        if max_cog is not None:
-            if report.overall_cognitive_score > max_cog:
-                checks_failed.append(f"cognitive_score {report.overall_cognitive_score:.3f} > {max_cog}")
-            else:
-                checks_passed.append(f"cognitive_score {report.overall_cognitive_score:.3f} <= {max_cog}")
-
-        min_mece = spec.get("expected_mece_min")
-        if min_mece is not None:
-            if report.mece_alignment_score < min_mece:
-                checks_failed.append(f"mece_score {report.mece_alignment_score:.3f} < {min_mece}")
-            else:
-                checks_passed.append(f"mece_score {report.mece_alignment_score:.3f} >= {min_mece}")
-
-        if checks_failed:
+        if ch_fail:
             failed += 1
-            failure_cases.append(f"{deck_id}: {'; '.join(checks_failed)}")
+            failure_cases.append(f"{deck_id}: {'; '.join(ch_fail)}")
         else:
             passed += 1
 
         results.append(BenchmarkResult(
             deck_id=deck_id, label=label,
-            overall_cognitive_score=report.overall_cognitive_score,
-            mece_alignment_score=report.mece_alignment_score,
-            avg_information_density=report.avg_information_density,
-            avg_bullet_brevity=report.avg_bullet_brevity,
-            avg_readability_grade=report.avg_readability_grade,
-            numeric_claims_found=fidelity["numeric_claims_found"],
-            data_fidelity_precision=fidelity["data_fidelity_precision"],
-            checks_passed=checks_passed, checks_failed=checks_failed,
+            overall_cognitive_score=rep.overall_cognitive_score,
+            mece_alignment_score=rep.mece_alignment_score,
+            avg_information_density=rep.avg_information_density,
+            avg_bullet_brevity=rep.avg_bullet_brevity,
+            avg_readability_grade=rep.avg_readability_grade,
+            numeric_claims_found=fid["numeric_claims_found"],
+            data_fidelity_precision=fid["data_fidelity_precision"],
+            checks_passed=ch_pass, checks_failed=ch_fail,
         ))
 
     return BenchmarkReport(total_decks=len(dataset), passed=passed, failed=failed, results=results, failure_cases=failure_cases)
 
 
 def main() -> int:
-    print("Sentinel Observatory — Evaluation Benchmark")
-    print("=" * 50)
+    print("Sentinel Observatory — Evaluation Benchmark\n" + "=" * 50)
     report = run_benchmark()
     for r in report.results:
-        status = "PASS" if not r.checks_failed else "FAIL"
-        print(f"[{status}] {r.deck_id}: {r.label}")
-        print(f"  cog={r.overall_cognitive_score:.3f} mece={r.mece_alignment_score:.3f} density={r.avg_information_density:.3f} brevity={r.avg_bullet_brevity:.3f} grade={r.avg_readability_grade:.1f} fidelity={r.data_fidelity_precision:.3f}")
-        for chk in r.checks_passed:
-            print(f"  ✓ {chk}")
-        for chk in r.checks_failed:
-            print(f"  ✗ {chk}")
+        st = "PASS" if not r.checks_failed else "FAIL"
+        print(f"[{st}] {r.deck_id}: {r.label}\n  cog={r.overall_cognitive_score:.3f} mece={r.mece_alignment_score:.3f} density={r.avg_information_density:.3f} brevity={r.avg_bullet_brevity:.3f} grade={r.avg_readability_grade:.1f} fidelity={r.data_fidelity_precision:.3f}")
+        for chk in r.checks_passed: print(f"  ✓ {chk}")
+        for chk in r.checks_failed: print(f"  ✗ {chk}")
     print(f"\nResults: {report.passed}/{report.total_decks} passed, {report.failed} failed")
-    if report.failure_cases:
-        for fc in report.failure_cases:
-            print(f"  - {fc}")
+    for fc in report.failure_cases: print(f"  - {fc}")
     print(f"\n{report.baseline_note}")
     return 0 if report.failed == 0 else 1
 

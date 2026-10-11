@@ -39,9 +39,6 @@ body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,
 .slide-canvas{background:#020617;border:1px solid var(--border);border-radius:8px;padding:1.5rem;min-height:280px}
 .speaker-notes-panel,.advisory-box{margin-top:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.75rem}
 .score-badge{padding:.15rem .5rem;border-radius:4px;font-size:1rem}
-.eval-subsections{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-.metric-row{display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.85rem}
-.diag-item{padding:.4rem;border-radius:4px;font-size:.75rem;border-left:3px solid var(--border);margin-bottom:.3rem}
 .color-swatch{width:14px;height:14px;border-radius:3px;display:inline-block}
 .chip{background:var(--border);font-size:.65rem;padding:.15rem .35rem;border-radius:3px;margin-right:.3rem}
 .app-footer{border-top:1px solid var(--border);padding:1rem;text-align:center;font-size:.75rem;color:var(--muted)}

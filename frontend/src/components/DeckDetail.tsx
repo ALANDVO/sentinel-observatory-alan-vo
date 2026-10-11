@@ -17,7 +17,6 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
   const [newNotes, setNewNotes] = useState('');
   const [newType, setNewType] = useState('content');
   const [adding, setAdding] = useState(false);
-
   const [voice, setVoice] = useState('narrator-en');
   const [synthesizing, setSynthesizing] = useState(false);
   const [narrationData, setNarrationData] = useState<DeckNarrationOut | null>(null);
@@ -32,24 +31,18 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
     try {
       await onAddSlide(deck.id, { slide_type: newType, title: newTitle, body_text: newBody, speaker_notes: newNotes });
       setShowAddSlide(false);
-      setNewTitle('');
-      setNewBody('');
-      setNewNotes('');
+      setNewTitle(''); setNewBody(''); setNewNotes('');
       setSelectedSlideIndex(slides.length);
-    } finally {
-      setAdding(false);
-    }
+    } finally { setAdding(false); }
   };
 
   const handleSynthesizeNarration = async () => {
     setSynthesizing(true);
     try {
-      const result = await api.decks.synthesizeNarration(deck.id, voice);
-      setNarrationData(result);
+      const res = await api.decks.synthesizeNarration(deck.id, voice);
+      setNarrationData(res);
       setAudioTimestamp(Date.now());
-    } finally {
-      setSynthesizing(false);
-    }
+    } finally { setSynthesizing(false); }
   };
 
   return (
@@ -61,16 +54,14 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
           <button className="btn-primary" onClick={() => window.open(api.decks.exportPptxUrl(deck.id), '_blank')}>💾 Export Native .pptx</button>
         </div>
       </div>
-
-      <div className="detail-header">
+      <div className="detail-header" style={{ margin: '1rem 0' }}>
         <h2>{deck.title}</h2>
-        <div className="header-tags">
+        <div className="card-meta">
           <span className="tag">{deck.source_type}</span>
           <span className="tag status-tag">{deck.status}</span>
           <span className="tag">{slides.length} slides</span>
         </div>
       </div>
-
       <div className="detail-layout">
         <aside className="slide-list-sidebar">
           <div className="sidebar-header">
@@ -79,27 +70,22 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
           </div>
           <div className="slide-thumbnails">
             {slides.map((s, idx) => (
-              <div
-                key={s.id}
-                className={`slide-thumb-card ${idx === selectedSlideIndex ? 'active' : ''}`}
-                onClick={() => setSelectedSlideIndex(idx)}
-              >
-                <div className="thumb-num">#{s.position}</div>
+              <div key={s.id} className={`slide-thumb-card ${idx === selectedSlideIndex ? 'active' : ''}`} onClick={() => setSelectedSlideIndex(idx)}>
+                <div>#{s.position}</div>
                 <div>
-                  <div className="card-title" style={{ fontSize: '.85rem' }}>{s.title || `Slide ${s.position}`}</div>
+                  <div style={{ fontSize: '.85rem', fontWeight: 600 }}>{s.title || `Slide ${s.position}`}</div>
                   <span className="tag">{s.slide_type}</span>
                 </div>
               </div>
             ))}
           </div>
         </aside>
-
         <main>
           {currentSlide ? (
             <div>
               <div className="slide-canvas">
                 <span className="tag">{currentSlide.slide_type.toUpperCase()}</span>
-                <h3 className="card-title" style={{ marginTop: '.5rem', fontSize: '1.2rem' }}>{currentSlide.title}</h3>
+                <h3 style={{ marginTop: '.5rem', fontSize: '1.2rem' }}>{currentSlide.title}</h3>
                 {currentSlide.body_text && (
                   <div className="canvas-bullets" style={{ marginTop: '1rem' }}>
                     {currentSlide.body_text.split('\n').map((l, i) => <div key={i}>• {l}</div>)}
@@ -108,9 +94,8 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
               </div>
               <div className="speaker-notes-panel">
                 <h4>🎙️ Speaker Notes</h4>
-                <p className="speaker-notes-text">{currentSlide.speaker_notes || 'No speaker notes.'}</p>
+                <p style={{ marginTop: '.3rem', fontSize: '.9rem', color: 'var(--muted)' }}>{currentSlide.speaker_notes || 'No speaker notes.'}</p>
               </div>
-
               <div className="speaker-notes-panel" style={{ marginTop: '1rem' }} data-testid="narration-panel">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h4>🎧 Audio Narration</h4>
@@ -126,30 +111,12 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
                     </button>
                   </div>
                 </div>
-
                 <div style={{ marginTop: '.75rem' }}>
-                  <p style={{ fontSize: '.85rem', color: '#666', marginBottom: '.5rem' }}>
-                    Deck Narration Audio (RIFF/WAVE PCM track):
-                  </p>
-                  <audio
-                    data-testid="deck-audio-player"
-                    controls
-                    style={{ width: '100%', marginBottom: '.5rem' }}
-                    src={`${api.decks.narrationAudioUrl(deck.id, voice)}&t=${audioTimestamp}`}
-                  />
+                  <p style={{ fontSize: '.85rem', color: 'var(--muted)', marginBottom: '.5rem' }}>Deck Narration Audio (RIFF/WAVE PCM track):</p>
+                  <audio data-testid="deck-audio-player" controls style={{ width: '100%', marginBottom: '.5rem' }} src={`${api.decks.narrationAudioUrl(deck.id, voice)}&t=${audioTimestamp}`} />
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <a
-                      className="btn-secondary btn-sm"
-                      href={api.decks.narrationAudioUrl(deck.id, voice)}
-                      download={`${deck.title.replace(/\s+/g, '_')}_narration.wav`}
-                    >
-                      ⬇️ Download Deck Audio (.wav)
-                    </a>
-                    {narrationData && (
-                      <span className="tag" style={{ background: '#e0f2fe', color: '#0369a1' }}>
-                        Synthesized: {narrationData.total_duration_seconds}s ({narrationData.total_words} words)
-                      </span>
-                    )}
+                    <a className="btn-secondary btn-sm" href={api.decks.narrationAudioUrl(deck.id, voice)} download={`${deck.title.replace(/\s+/g, '_')}_narration.wav`}>⬇️ Download Deck Audio (.wav)</a>
+                    {narrationData && <span className="tag" style={{ background: '#e0f2fe', color: '#0369a1' }}>Synthesized: {narrationData.total_duration_seconds}s ({narrationData.total_words} words)</span>}
                   </div>
                 </div>
               </div>
@@ -157,7 +124,6 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
           ) : <div className="state-panel"><p>No slides.</p></div>}
         </main>
       </div>
-
       {showAddSlide && (
         <div className="modal-overlay" onClick={() => setShowAddSlide(false)}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>

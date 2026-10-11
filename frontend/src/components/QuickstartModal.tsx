@@ -44,25 +44,22 @@ export const QuickstartModal: React.FC<QuickstartModalProps> = ({ isOpen, onClos
           <h3>🚀 Quickstart Onboarding & Presets</h3>
           <button className="btn-close" onClick={onClose}>&times;</button>
         </div>
-        <div className="tab-pills" style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '.5rem' }}>
-          <button className={`btn-link ${activeStep === 1 ? 'font-bold' : ''}`} onClick={() => setActiveStep(1)}>1. Presets</button>
-          <button className={`btn-link ${activeStep === 2 ? 'font-bold' : ''}`} onClick={() => setActiveStep(2)}>2. Workflows</button>
-          <button className={`btn-link ${activeStep === 3 ? 'font-bold' : ''}`} onClick={() => setActiveStep(3)}>3. Docs</button>
+        <div className="tab-pills" style={{ marginBottom: '1rem' }}>
+          <button className={`tab-pill ${activeStep === 1 ? 'active' : ''}`} onClick={() => setActiveStep(1)}>1. Presets</button>
+          <button className={`tab-pill ${activeStep === 2 ? 'active' : ''}`} onClick={() => setActiveStep(2)}>2. Workflows</button>
+          <button className={`tab-pill ${activeStep === 3 ? 'active' : ''}`} onClick={() => setActiveStep(3)}>3. Docs</button>
         </div>
         {activeStep === 1 && (
-          <div>
-            <p style={{ fontSize: '.85rem', color: 'var(--muted)', marginBottom: '.75rem' }}>Select a preset to generate a deck with native layouts and audio narration:</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
-              {PRESETS.map((p) => (
-                <div key={p.id} className="card" style={{ cursor: 'pointer' }} onClick={() => { onSelectPreset(p.topic, p.slides); onClose(); }}>
-                  <div className="card-top">
-                    <h4>{p.title}</h4>
-                    <span className="tag">{p.category}</span>
-                  </div>
-                  <p style={{ margin: '.25rem 0 0', fontSize: '.8rem', color: 'var(--muted)' }}>{p.desc}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
+            {PRESETS.map((p) => (
+              <div key={p.id} className="card" style={{ cursor: 'pointer' }} onClick={() => { onSelectPreset(p.topic, p.slides); onClose(); }}>
+                <div className="card-top">
+                  <h4>{p.title}</h4>
+                  <span className="tag">{p.category}</span>
                 </div>
-              ))}
-            </div>
+                <p style={{ margin: '.25rem 0 0', fontSize: '.8rem', color: 'var(--muted)' }}>{p.desc}</p>
+              </div>
+            ))}
           </div>
         )}
         {activeStep === 2 && (

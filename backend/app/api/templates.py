@@ -45,10 +45,6 @@ class TemplateCreateBody(BaseModel):
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
-@router.on_event("startup")  # type: ignore[attr-defined]
-def _seed() -> None:
-    """No-op: seeding happens in app startup event."""
-    pass
 
 
 @router.get("", response_model=TemplateListResponse)

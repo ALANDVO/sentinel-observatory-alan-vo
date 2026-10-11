@@ -1,7 +1,4 @@
-"""Slide evaluation engine: cognitive load, data fidelity, and MECE alignment metrics.
-
-Deterministic offline scoring without LLM dependencies.
-"""
+"""Slide evaluation engine: cognitive load, data fidelity, and MECE alignment metrics."""
 from __future__ import annotations
 
 import re
@@ -40,12 +37,8 @@ def _information_density(body: str) -> float:
     if not body:
         return 1.0
     bullets = re.findall(r"(?:^[\*\-•]\s+.+|(?<=[.!?])\s+[A-Z])", body, re.MULTILINE)
-    bullet_count = max(1, len(bullets))
-    char_count = len(body)
-    if char_count > 600 or bullet_count > 7:
-        score = max(0.0, 1.0 - (char_count - 600) / 1200 - max(0, bullet_count - 7) * 0.05)
-    else:
-        score = 1.0 - (char_count / 1200)
+    bc, cc = max(1, len(bullets)), len(body)
+    score = max(0.0, 1.0 - (cc - 600) / 1200 - max(0, bc - 7) * 0.05) if cc > 600 or bc > 7 else 1.0 - (cc / 1200)
     return round(max(0.0, min(1.0, score)), 3)
 
 
@@ -61,16 +54,13 @@ def _bullet_brevity(body: str) -> float:
 
 
 def _hierarchy_balance(title: str, body: str) -> float:
-    tw = len(_tokenize(title))
-    bw = len(_tokenize(body)) if body else 0
+    tw, bw = len(_tokenize(title)), len(_tokenize(body)) if body else 0
     if bw == 0:
         return 0.8
     ratio = tw / (tw + bw)
     if 0.05 <= ratio <= 0.25:
         return 1.0
-    elif ratio < 0.05:
-        return round(ratio / 0.05, 3)
-    return round(max(0.0, 1.0 - (ratio - 0.25) / 0.75), 3)
+    return round(ratio / 0.05 if ratio < 0.05 else max(0.0, 1.0 - (ratio - 0.25) / 0.75), 3)
 
 
 def _mece_alignment(slide_titles: list[str]) -> float:
@@ -78,37 +68,25 @@ def _mece_alignment(slide_titles: list[str]) -> float:
         return 1.0
     overlaps = []
     for i in range(len(slide_titles) - 1):
-        s1 = set(_tokenize(slide_titles[i]))
-        s2 = set(_tokenize(slide_titles[i + 1]))
-        if not s1 or not s2:
-            overlaps.append(1.0)
-            continue
-        overlaps.append(1.0 - len(s1 & s2) / len(s1 | s2))
+        s1, s2 = set(_tokenize(slide_titles[i])), set(_tokenize(slide_titles[i + 1]))
+        overlaps.append(1.0 if not s1 or not s2 else 1.0 - len(s1 & s2) / len(s1 | s2))
     return round(sum(overlaps) / len(overlaps), 3)
 
 
 class EvaluationEngine:
-    """Computes cognitive load, data fidelity, and MECE alignment evaluations."""
-
     def evaluate_deck(self, deck_id: str, slides: list[dict[str, Any]]) -> DeckCognitiveReport:
-        slide_scores: list[SlideScore] = []
-        titles: list[str] = []
+        slide_scores, titles = [], []
         for s in slides:
-            sid = s.get("id", "")
-            pos = s.get("position", 0)
-            title = s.get("title") or ""
-            body = s.get("body_text") or ""
+            sid, pos = s.get("id", ""), s.get("position", 0)
+            title, body = s.get("title") or "", s.get("body_text") or ""
             d = _information_density(body)
             b = _bullet_brevity(body)
             h = _hierarchy_balance(title, body)
             r = flesch_kincaid_grade(f"{title}. {body}")
-            notes: list[str] = []
-            if d < 0.5:
-                notes.append("High information density; consider splitting slide.")
-            if b < 0.5:
-                notes.append("Bullets are verbose; aim for ≤ 10 words.")
-            if r > 12:
-                notes.append("Reading grade level is high; simplify language.")
+            notes = []
+            if d < 0.5: notes.append("High information density; consider splitting slide.")
+            if b < 0.5: notes.append("Bullets are verbose; aim for ≤ 10 words.")
+            if r > 12: notes.append("Reading grade level is high; simplify language.")
             slide_scores.append(SlideScore(sid, pos, title, d, b, h, r, notes))
             titles.append(title)
 
@@ -124,13 +102,10 @@ class EvaluationEngine:
         r_score = max(0.0, 1.0 - max(0.0, avg_r - 6.0) / 12.0)
         overall = round(0.25 * avg_d + 0.25 * avg_b + 0.15 * avg_h + 0.20 * r_score + 0.15 * mece, 3)
 
-        obs: list[str] = []
-        if avg_d < 0.6:
-            obs.append("Overall deck information density is high; consider reducing slide content.")
-        if mece < 0.6:
-            obs.append("Slide titles show topic overlap; review MECE structure.")
-        if avg_r > 14:
-            obs.append("Deck reading level is graduate-level; simplify for wider audiences.")
+        obs = []
+        if avg_d < 0.6: obs.append("Overall deck information density is high; consider reducing slide content.")
+        if mece < 0.6: obs.append("Slide titles show topic overlap; review MECE structure.")
+        if avg_r > 14: obs.append("Deck reading level is graduate-level; simplify for wider audiences.")
 
         return DeckCognitiveReport(
             deck_id=deck_id, slide_scores=slide_scores,
@@ -141,14 +116,12 @@ class EvaluationEngine:
 
     def check_data_fidelity(self, slides: list[dict[str, Any]], source_data: list[dict[str, Any]]) -> dict[str, Any]:
         numeric_re = re.compile(r"\b(\d[\d,]*\.?\d*)\s*(?:%|x|times|k|M|B)?\b")
-        claim_values: list[float] = []
+        claim_values = []
         for s in slides:
             body = f"{s.get('body_text') or ''} {s.get('title') or ''}"
             for m in numeric_re.finditer(body):
-                try:
-                    claim_values.append(float(m.group(1).replace(",", "")))
-                except ValueError:
-                    pass
+                try: claim_values.append(float(m.group(1).replace(",", "")))
+                except ValueError: pass
 
         if not claim_values:
             return {"numeric_claims_found": 0, "claims_verified": 0, "data_fidelity_precision": 1.0, "data_fidelity_recall": 1.0, "unsupported_claims": []}
@@ -157,8 +130,7 @@ class EvaluationEngine:
         if not source_values:
             return {"numeric_claims_found": len(claim_values), "claims_verified": 0, "data_fidelity_precision": 0.0, "data_fidelity_recall": 0.0, "unsupported_claims": [str(v) for v in claim_values[:10]]}
 
-        verified = 0
-        unsupported = []
+        verified, unsupported = 0, []
         for cv in claim_values:
             if any(abs(cv - sv) / max(abs(sv), 1.0) < 0.05 for sv in source_values):
                 verified += 1

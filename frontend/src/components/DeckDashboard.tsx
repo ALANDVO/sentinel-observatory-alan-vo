@@ -44,15 +44,10 @@ export const DeckDashboard: React.FC<DeckDashboardProps> = ({
       setShowModal(false);
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : 'Creation failed');
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
-  const filtered = decks.filter((d) => {
-    const s = d.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return s && (!filterSource || d.source_type === filterSource);
-  });
+  const filtered = decks.filter((d) => d.title.toLowerCase().includes(searchQuery.toLowerCase()) && (!filterSource || d.source_type === filterSource));
 
   return (
     <div className="dashboard-container">
@@ -63,7 +58,6 @@ export const DeckDashboard: React.FC<DeckDashboardProps> = ({
         </div>
         <button className="btn-primary" onClick={() => setShowModal(true)}>+ New Presentation</button>
       </div>
-
       <div className="filter-bar">
         <input type="text" className="search-input" placeholder="Search presentations…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
         <select className="select-input" value={filterSource} onChange={(e) => setFilterSource(e.target.value)}>
@@ -72,9 +66,7 @@ export const DeckDashboard: React.FC<DeckDashboardProps> = ({
           <option value="document">Document-driven</option>
         </select>
       </div>
-
       {error && <div className="alert alert-error">{error}</div>}
-
       {loading ? (
         <div className="state-panel"><div className="spinner" /><p>Loading presentations…</p></div>
       ) : filtered.length === 0 ? (
@@ -87,16 +79,16 @@ export const DeckDashboard: React.FC<DeckDashboardProps> = ({
         <div className="deck-grid">
           {filtered.map((d) => (
             <div key={d.id} className="deck-card" onClick={() => onSelectDeck(d.id)}>
-              <div className="deck-card-header">
+              <div className="card-top">
                 <span className="tag">{d.source_type}</span>
                 <span className="tag status-tag">{d.status}</span>
               </div>
-              <h3 className="card-title">{d.title}</h3>
-              <div className="deck-card-meta">
+              <h3 className="card-title" style={{ margin: '.5rem 0' }}>{d.title}</h3>
+              <div className="card-meta" style={{ fontSize: '.8rem', color: 'var(--muted)' }}>
                 <span>{d.slide_count} slides</span>
-                <span>{new Date(d.created_at).toLocaleDateString()}</span>
+                <span>• {new Date(d.created_at).toLocaleDateString()}</span>
               </div>
-              <div className="card-actions" onClick={(e) => e.stopPropagation()}>
+              <div className="card-actions" style={{ marginTop: '.75rem' }} onClick={(e) => e.stopPropagation()}>
                 <button className="btn-secondary btn-sm" onClick={() => onSelectDeck(d.id)}>Open</button>
                 <button className="btn-danger btn-sm" onClick={() => onDeleteDeck(d.id)}>Delete</button>
               </div>
@@ -104,7 +96,6 @@ export const DeckDashboard: React.FC<DeckDashboardProps> = ({
           ))}
         </div>
       )}
-
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
@@ -114,9 +105,9 @@ export const DeckDashboard: React.FC<DeckDashboardProps> = ({
             </div>
             {submitError && <div className="alert alert-error">{submitError}</div>}
             <form onSubmit={handleSubmit}>
-              <div className="tabs-container">
-                <button type="button" className={`tab-btn ${createMode === 'topic' ? 'active' : ''}`} onClick={() => setCreateMode('topic')}>From Research Topic</button>
-                <button type="button" className={`tab-btn ${createMode === 'doc' ? 'active' : ''}`} onClick={() => setCreateMode('doc')}>From Freeform Document</button>
+              <div className="tab-pills" style={{ marginBottom: '.75rem' }}>
+                <button type="button" className={`tab-pill ${createMode === 'topic' ? 'active' : ''}`} onClick={() => setCreateMode('topic')}>From Research Topic</button>
+                <button type="button" className={`tab-pill ${createMode === 'doc' ? 'active' : ''}`} onClick={() => setCreateMode('doc')}>From Freeform Document</button>
               </div>
               {createMode === 'topic' ? (
                 <div className="form-group">

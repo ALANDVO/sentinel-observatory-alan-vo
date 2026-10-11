@@ -4,21 +4,16 @@ import json, os, sys
 from dataclasses import dataclass, field
 from pathlib import Path, PurePath
 from typing import Literal
-
 Severity = Literal["error", "warning", "info"]
-
 @dataclass
 class DiagnosticItem:
     check_name: str; code: str; severity: Severity; message: str; affected_path: str | None = None; remediation: str | None = None
-
 @dataclass
 class AttributionReport:
     passed: bool; check_count: int; diagnostics: list[DiagnosticItem] = field(default_factory=list)
     def to_dict(self) -> dict: return {"passed": self.passed, "check_count": self.check_count, "diagnostics": [vars(d) for d in self.diagnostics]}
-
 def _item(name: str, code: str, sev: Severity, msg: str, path: str | None = None, rem: str | None = None) -> DiagnosticItem:
     return DiagnosticItem(name, code, sev, msg, path, rem)
-
 class AttributionGuard:
     def validate_deck_source(self, deck_id: str, source_text: str | None, slides: list[dict]) -> AttributionReport:
         diag: list[DiagnosticItem] = []
@@ -33,7 +28,6 @@ class AttributionGuard:
         ids = [s.get("id") for s in slides if s.get("id")]
         if len(ids) != len(set(ids)): diag.append(_item("unique_slide_ids", "ATTR-006", "error", "Duplicate slide IDs.", rem="Use unique IDs."))
         return AttributionReport(not any(d.severity == "error" for d in diag), 6, diag)
-
     def validate_from_file(self, source_file: str) -> AttributionReport:
         diag, np = [], str(PurePath(source_file))
         try:
@@ -43,7 +37,6 @@ class AttributionGuard:
         except PermissionError: diag.append(_item("file_readable", "ATTR-FILE-003", "error", f"Permission denied: '{np}'", np, "Check read permissions."))
         except Exception as exc: diag.append(_item("file_readable", "ATTR-FILE-004", "error", f"Error reading '{np}': {exc}", np, "Fix OS error."))
         return AttributionReport(not any(d.severity == "error" for d in diag), 1, diag)
-
     def validate_workspace(self, workspace_path: str) -> AttributionReport:
         p, np = Path(os.path.normpath(workspace_path)), str(PurePath(workspace_path))
         if not p.is_dir(): return AttributionReport(False, 1, [_item("workspace_is_dir", "ATTR-DIR-001", "error", f"Workspace not found: '{np}'", np, "Valid dir.")])
@@ -51,7 +44,6 @@ class AttributionGuard:
         if not sfiles: return AttributionReport(True, 1, [_item("workspace_has_sources", "ATTR-DIR-002", "warning", f"No sources in '{np}'.", np, "Add files.")])
         diag = [d for sf in sfiles[:10] for d in self.validate_from_file(str(sf)).diagnostics]
         return AttributionReport(not any(d.severity == "error" for d in diag), 1 + len(sfiles), diag)
-
 def main(argv: list[str] | None = None) -> int:
     import argparse
     parser = argparse.ArgumentParser(description="Attribution Guard integrity gate")
@@ -77,5 +69,4 @@ def main(argv: list[str] | None = None) -> int:
             loc = f" [{d.affected_path}]" if d.affected_path else ""
             sys.stderr.write(f"  * {d.code} ({d.severity.upper()}): {d.message}{loc}\n" + (f"    Remediation: {d.remediation}\n" if d.remediation else ""))
     return 0 if rep.passed else 1
-
 if __name__ == "__main__": sys.exit(main())

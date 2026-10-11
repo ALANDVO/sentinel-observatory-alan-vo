@@ -81,7 +81,6 @@ class PromptAuditService:
             if tm.get("is_fixed_template") and not tm.get("has_translate_note") and not _CJK.search(pt): f.append(AuditFinding("fixed_template_missing_translate_note", "warning", f"Template '{tm.get('name', i)}' lacks translate note.", location=f"index={i}"))
         return PromptAuditReport(not any(x.severity == "error" for x in f), _estimate_tokens(" ".join(str(t) for t in templates)), None, f)
 
-
 def main(argv: list[str] | None = None) -> int:
     import argparse
     p = argparse.ArgumentParser(description="Prompt audit gate")

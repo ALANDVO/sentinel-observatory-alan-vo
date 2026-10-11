@@ -5,11 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-_MODEL_WINDOWS: dict[str, int] = {
-    "gpt-3.5-turbo": 4096, "gpt-4": 8192, "gpt-4o": 128000, "gpt-4o-mini": 128000,
-    "claude-3-haiku-20240307": 200000, "claude-3-sonnet-20240229": 200000,
-    "gemini-1.5-flash": 1048576, "gemini-1.5-pro": 2097152,
-}
+_MODEL_WINDOWS = {"gpt-3.5-turbo": 4096, "gpt-4": 8192, "gpt-4o": 128000, "gpt-4o-mini": 128000, "claude-3-haiku-20240307": 200000, "claude-3-sonnet-20240229": 200000, "gemini-1.5-flash": 1048576, "gemini-1.5-pro": 2097152}
 _BILINGUAL_SUFFIX_RE = re.compile(r"_(?:zh|en|ja|fr|de|es|pt|ko|ar)(?:_[a-z]{2})?$", re.I)
 _CJK_RE = re.compile(r"[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]")
 _PLACEHOLDER_RE = re.compile(r"\{([a-zA-Z0-9_]+)\}")
@@ -31,8 +27,7 @@ class PromptAuditReport:
     passed: bool; total_tokens_estimated: int; model_window: int | None
     findings: list[AuditFinding] = field(default_factory=list)
     def to_dict(self) -> dict:
-        return {"passed": self.passed, "total_tokens_estimated": self.total_tokens_estimated,
-                "model_window": self.model_window, "findings": [vars(f) for f in self.findings]}
+        return {"passed": self.passed, "total_tokens_estimated": self.total_tokens_estimated, "model_window": self.model_window, "findings": [vars(f) for f in self.findings]}
 
 class PromptAuditService:
     def audit_slide_content(self, slides: list[dict[str, Any]], model: str = "gpt-4o-mini", locale_keys_per_slide: list[dict[str, str]] | None = None) -> PromptAuditReport:
@@ -44,8 +39,7 @@ class PromptAuditService:
         if locale_keys_per_slide:
             for i, kd in enumerate(locale_keys_per_slide):
                 for k in kd:
-                    if _BILINGUAL_SUFFIX_RE.search(k):
-                        fnd.append(AuditFinding("bilingual_key_suffix_pollution", "error", f"Key '{k}' uses language suffix violating schema.", location=f"slide_index={i}", suggestion="Use neutral keys."))
+                    if _BILINGUAL_SUFFIX_RE.search(k): fnd.append(AuditFinding("bilingual_key_suffix_pollution", "error", f"Key '{k}' uses language suffix violating schema.", location=f"slide_index={i}", suggestion="Use neutral keys."))
         for i, s in enumerate(slides):
             if _CJK_RE.search(s.get("body_text") or "") and not s.get("locale_override"):
                 fnd.append(AuditFinding("cjk_content_without_locale_override", "info", f"Slide {i} has CJK chars without locale_override.", location=f"slide_id={s.get('id', i)}"))
@@ -79,8 +73,7 @@ class PromptAuditService:
 
     def audit_markdown_translation_drift(self, source_md: str, target_md: str, source_locale: str = "en", target_locale: str = "zh") -> PromptAuditReport:
         fnd: list[AuditFinding] = []
-        sh = [m.group(1) for m in _MD_HEADING_RE.finditer(source_md)]
-        th = [m.group(1) for m in _MD_HEADING_RE.finditer(target_md)]
+        sh, th = [m.group(1) for m in _MD_HEADING_RE.finditer(source_md)], [m.group(1) for m in _MD_HEADING_RE.finditer(target_md)]
         if len(sh) != len(th): fnd.append(AuditFinding("heading_count_drift", "warning", f"Heading drift: {source_locale}={len(sh)}, {target_locale}={len(th)}."))
         sc, tc = len(_MD_CODE_BLOCK_RE.findall(source_md)) // 2, len(_MD_CODE_BLOCK_RE.findall(target_md)) // 2
         if sc != tc: fnd.append(AuditFinding("code_block_drift", "error", f"Code block drift: {source_locale}={sc}, {target_locale}={tc}."))
@@ -98,10 +91,8 @@ class PromptAuditService:
         fnd: list[AuditFinding] = []
         for i, t in enumerate(templates):
             trig, ptext = t.get("trigger") or "", t.get("prompt") or ""
-            if _CJK_RE.search(trig) and not t.get("is_multilingual"):
-                fnd.append(AuditFinding("bilingual_trigger_pollution", "error", f"Trigger '{trig[:30]}' has CJK chars.", location=f"index={i}"))
-            if t.get("is_fixed_template") and not t.get("has_translate_note") and not _CJK_RE.search(ptext):
-                fnd.append(AuditFinding("fixed_template_missing_translate_note", "warning", f"Template '{t.get('name', i)}' lacks translate note.", location=f"index={i}"))
+            if _CJK_RE.search(trig) and not t.get("is_multilingual"): fnd.append(AuditFinding("bilingual_trigger_pollution", "error", f"Trigger '{trig[:30]}' has CJK chars.", location=f"index={i}"))
+            if t.get("is_fixed_template") and not t.get("has_translate_note") and not _CJK_RE.search(ptext): fnd.append(AuditFinding("fixed_template_missing_translate_note", "warning", f"Template '{t.get('name', i)}' lacks translate note.", location=f"index={i}"))
         return PromptAuditReport(not any(x.severity == "error" for x in fnd), _estimate_tokens(" ".join(str(t) for t in templates)), None, fnd)
 
 def main(argv: list[str] | None = None) -> int:
@@ -119,15 +110,12 @@ def main(argv: list[str] | None = None) -> int:
         rep = svc.audit_markdown_translation_drift(Path(args.doc[0]).read_text("utf-8"), Path(args.doc[1]).read_text("utf-8"))
     else:
         rep = svc.audit_locale_dictionary({"en": {"title": "Deck", "slides": "{n} slides"}, "zh": {"title": "幻灯片", "slides": "{n} 页"}, "ja": {"title": "スライド", "slides": "{n} 枚"}})
-    if args.json:
-        sys.stdout.write(json.dumps(rep.to_dict(), indent=2) + "\n")
+    if args.json: sys.stdout.write(json.dumps(rep.to_dict(), indent=2) + "\n")
     else:
-        st = "PASS" if rep.passed else "FAIL"
-        errs, warns = [f for f in rep.findings if f.severity == "error"], [f for f in rep.findings if f.severity == "warning"]
+        st, errs, warns = "PASS" if rep.passed else "FAIL", [f for f in rep.findings if f.severity == "error"], [f for f in rep.findings if f.severity == "warning"]
         out = sys.stdout if rep.passed else sys.stderr
         out.write(f"[PromptAudit] {st}: {len(errs)} error(s), {len(warns)} warning(s).\n")
         for f in rep.findings: out.write(f"  * {f.rule} ({f.severity.upper()}): {f.message}\n")
     return 0 if rep.passed else 1
 
-if __name__ == "__main__":
-    sys.exit(main())
+if __name__ == "__main__": sys.exit(main())

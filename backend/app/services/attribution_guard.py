@@ -9,15 +9,12 @@ Severity = Literal["error", "warning", "info"]
 
 @dataclass
 class DiagnosticItem:
-    check_name: str; code: str; severity: Severity; message: str
-    affected_path: str | None = None; remediation: str | None = None
+    check_name: str; code: str; severity: Severity; message: str; affected_path: str | None = None; remediation: str | None = None
 
 @dataclass
 class AttributionReport:
-    passed: bool; check_count: int
-    diagnostics: list[DiagnosticItem] = field(default_factory=list)
-    def to_dict(self) -> dict:
-        return {"passed": self.passed, "check_count": self.check_count, "diagnostics": [vars(d) for d in self.diagnostics]}
+    passed: bool; check_count: int; diagnostics: list[DiagnosticItem] = field(default_factory=list)
+    def to_dict(self) -> dict: return {"passed": self.passed, "check_count": self.check_count, "diagnostics": [vars(d) for d in self.diagnostics]}
 
 def _item(name: str, code: str, sev: Severity, msg: str, path: str | None = None, rem: str | None = None) -> DiagnosticItem:
     return DiagnosticItem(name, code, sev, msg, path, rem)
@@ -47,24 +44,17 @@ class AttributionGuard:
         diag, np = [], str(PurePath(source_file))
         try:
             with open(source_file, "r", encoding="utf-8") as fh: content = fh.read()
-            if len(content.strip()) < 5:
-                diag.append(_item("file_content_non_empty", "ATTR-FILE-001", "error", f"File '{np}' is empty.", np, "Provide non-empty file."))
-        except FileNotFoundError:
-            diag.append(_item("file_exists", "ATTR-FILE-002", "error", f"File not found: '{np}'", np, "Verify path exists."))
-        except PermissionError:
-            diag.append(_item("file_readable", "ATTR-FILE-003", "error", f"Permission denied: '{np}'", np, "Check read permissions."))
-        except Exception as exc:
-            diag.append(_item("file_readable", "ATTR-FILE-004", "error", f"Error reading '{np}': {type(exc).__name__}: {exc}", np, "Fix underlying OS error."))
+            if len(content.strip()) < 5: diag.append(_item("file_content_non_empty", "ATTR-FILE-001", "error", f"File '{np}' is empty.", np, "Provide non-empty file."))
+        except FileNotFoundError: diag.append(_item("file_exists", "ATTR-FILE-002", "error", f"File not found: '{np}'", np, "Verify path exists."))
+        except PermissionError: diag.append(_item("file_readable", "ATTR-FILE-003", "error", f"Permission denied: '{np}'", np, "Check read permissions."))
+        except Exception as exc: diag.append(_item("file_readable", "ATTR-FILE-004", "error", f"Error reading '{np}': {type(exc).__name__}: {exc}", np, "Fix underlying OS error."))
         return AttributionReport(not any(d.severity == "error" for d in diag), 1, diag)
 
     def validate_workspace(self, workspace_path: str) -> AttributionReport:
-        p = Path(os.path.normpath(workspace_path))
-        np = str(PurePath(p))
-        if not p.is_dir():
-            return AttributionReport(False, 1, [_item("workspace_is_dir", "ATTR-DIR-001", "error", f"Workspace directory not found: '{np}'", np, "Specify a valid directory.")])
+        p, np = Path(os.path.normpath(workspace_path)), str(PurePath(workspace_path))
+        if not p.is_dir(): return AttributionReport(False, 1, [_item("workspace_is_dir", "ATTR-DIR-001", "error", f"Workspace directory not found: '{np}'", np, "Specify a valid directory.")])
         diag, sfiles = [], sorted(list(p.glob("*.json")) + list(p.glob("*.txt")))
-        if not sfiles:
-            diag.append(_item("workspace_has_sources", "ATTR-DIR-002", "warning", f"No source files (.json, .txt) found in '{np}'.", np, "Place presentation source files in workspace."))
+        if not sfiles: diag.append(_item("workspace_has_sources", "ATTR-DIR-002", "warning", f"No source files (.json, .txt) found in '{np}'.", np, "Place presentation source files in workspace."))
         else:
             for sf in sfiles[:10]: diag.extend(self.validate_from_file(str(sf)).diagnostics)
         return AttributionReport(not any(d.severity == "error" for d in diag), 1 + len(sfiles), diag)
@@ -75,28 +65,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("target", nargs="?", default=".", help="Path to deck source file or workspace directory")
     parser.add_argument("--json", action="store_true", help="Output diagnostics in JSON format")
     args = parser.parse_args(argv)
-
     guard, p = AttributionGuard(), Path(os.path.normpath(args.target))
     norm_path = str(PurePath(p))
-    if not p.exists():
-        report = AttributionReport(False, 1, [_item("target_exists", "ATTR-CLI-001", "error", f"Target path '{norm_path}' does not exist.", norm_path, "Verify that the specified path exists.")])
+    if not p.exists(): report = AttributionReport(False, 1, [_item("target_exists", "ATTR-CLI-001", "error", f"Target path '{norm_path}' does not exist.", norm_path, "Verify that the specified path exists.")])
     elif p.is_file():
         if p.suffix.lower() == ".json":
             try:
                 data = json.loads(p.read_text(encoding="utf-8"))
                 report = guard.validate_deck_source(data.get("id", p.stem), data.get("source_text"), data.get("slides", [])) if isinstance(data, dict) and "slides" in data else guard.validate_from_file(str(p))
-            except json.JSONDecodeError as err:
-                report = AttributionReport(False, 1, [_item("json_valid", "ATTR-CLI-002", "error", f"Malformed JSON in '{norm_path}': {err}", norm_path, "Fix syntax error in JSON file.")])
-        else:
-            report = guard.validate_from_file(str(p))
+            except json.JSONDecodeError as err: report = AttributionReport(False, 1, [_item("json_valid", "ATTR-CLI-002", "error", f"Malformed JSON in '{norm_path}': {err}", norm_path, "Fix syntax error in JSON file.")])
+        else: report = guard.validate_from_file(str(p))
+    else: report = guard.validate_workspace(str(p))
+    if args.json: sys.stdout.write(json.dumps(report.to_dict(), indent=2) + "\n")
     else:
-        report = guard.validate_workspace(str(p))
-
-    if args.json:
-        sys.stdout.write(json.dumps(report.to_dict(), indent=2) + "\n")
-    else:
-        if report.passed:
-            sys.stdout.write(f"[AttributionGuard] PASS ({report.check_count} checks verified).\n")
+        if report.passed: sys.stdout.write(f"[AttributionGuard] PASS ({report.check_count} checks verified).\n")
         else:
             errs, warns = [d for d in report.diagnostics if d.severity == "error"], [d for d in report.diagnostics if d.severity == "warning"]
             sys.stderr.write(f"[AttributionGuard] FAIL ({len(errs)} error(s), {len(warns)} warning(s)):\n")
@@ -106,5 +88,4 @@ def main(argv: list[str] | None = None) -> int:
                 if d.remediation: sys.stderr.write(f"    Remediation: {d.remediation}\n")
     return 0 if report.passed else 1
 
-if __name__ == "__main__":
-    sys.exit(main())
+if __name__ == "__main__": sys.exit(main())

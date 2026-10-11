@@ -109,11 +109,13 @@ export interface SlideNarrationOut {
   transcript: string;
   word_count: number;
   duration_seconds: number;
+  words_per_minute?: number;
 }
 
 export interface DeckNarrationOut {
   deck_id: string;
   voice: string;
+  words_per_minute?: number;
   total_duration_seconds: number;
   total_words: number;
   slides: SlideNarrationOut[];

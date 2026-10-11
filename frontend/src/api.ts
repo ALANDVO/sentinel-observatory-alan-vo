@@ -69,12 +69,12 @@ export const api = {
     addSlide: (id: string, b: { slide_type: string; title: string; body_text?: string; speaker_notes?: string }) =>
       request<SlideOut>(`/decks/${id}/slides`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }),
     exportPptxUrl: (id: string) => `${API_BASE}/decks/${id}/export/pptx`,
-    synthesizeNarration: (id: string, voice: string = 'narrator-en') =>
-      request<import('./types').DeckNarrationOut>(`/decks/${id}/narration/synthesize?voice=${encodeURIComponent(voice)}`, { method: 'POST' }),
-    narrationAudioUrl: (id: string, voice: string = 'narrator-en') =>
-      `${API_BASE}/decks/${id}/narration/audio?voice=${encodeURIComponent(voice)}`,
-    slideNarrationAudioUrl: (id: string, slideId: string, voice: string = 'narrator-en') =>
-      `${API_BASE}/decks/${id}/slides/${slideId}/narration/audio?voice=${encodeURIComponent(voice)}`,
+    synthesizeNarration: (id: string, voice: string = 'narrator-en', wpm: number = 150) =>
+      request<import('./types').DeckNarrationOut>(`/decks/${id}/narration/synthesize?voice=${encodeURIComponent(voice)}&words_per_minute=${wpm}`, { method: 'POST' }),
+    narrationAudioUrl: (id: string, voice: string = 'narrator-en', wpm: number = 150) =>
+      `${API_BASE}/decks/${id}/narration/audio?voice=${encodeURIComponent(voice)}&words_per_minute=${wpm}`,
+    slideNarrationAudioUrl: (id: string, slideId: string, voice: string = 'narrator-en', wpm: number = 150) =>
+      `${API_BASE}/decks/${id}/slides/${slideId}/narration/audio?voice=${encodeURIComponent(voice)}&words_per_minute=${wpm}`,
   },
   evaluations: {
     list: (p?: { deck_id?: string; eval_type?: string; skip?: number; limit?: number }) =>

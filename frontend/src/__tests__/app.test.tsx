@@ -179,3 +179,73 @@ describe('TemplateStudio Component', () => {
     expect(screen.getByText('KPI Grid')).toBeInTheDocument();
   });
 });
+
+describe('DeckDetail Component', () => {
+  it('renders slide canvas, speaker notes, and audio narration controls with pace selector', async () => {
+    const { DeckDetail } = await import('../components/DeckDetail');
+    const { api } = await import('../api');
+
+    const mockDeck = {
+      id: 'deck-42',
+      title: 'Neural Architecture Search',
+      topic: 'NAS',
+      source_type: 'topic',
+      status: 'completed',
+      slide_count: 1,
+      created_at: new Date().toISOString(),
+      slides: [
+        {
+          id: 'slide-1',
+          position: 0,
+          slide_type: 'content',
+          title: 'Introduction to NAS',
+          body_text: 'Reinforcement learning for search\nEvolutionary strategies',
+          speaker_notes: 'Speaker notes covering evolutionary NAS search space.',
+        },
+      ],
+    };
+
+    vi.spyOn(api.decks, 'synthesizeNarration').mockResolvedValueOnce({
+      deck_id: 'deck-42',
+      voice: 'narrator-en',
+      words_per_minute: 180,
+      total_duration_seconds: 4.5,
+      total_words: 12,
+      slides: [
+        {
+          slide_id: 'slide-1',
+          position: 0,
+          transcript: 'Speaker notes covering evolutionary NAS search space.',
+          word_count: 12,
+          duration_seconds: 4.5,
+          words_per_minute: 180,
+        },
+      ],
+    });
+
+    render(
+      <DeckDetail
+        deck={mockDeck}
+        onBack={vi.fn()}
+        onAddSlide={vi.fn()}
+        onRunEval={vi.fn()}
+      />
+    );
+
+    expect(screen.getAllByText('Introduction to NAS').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Speaker notes covering evolutionary NAS search space.')).toBeInTheDocument();
+    expect(screen.getByTestId('narration-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('narration-wpm-select')).toBeInTheDocument();
+
+    const wpmSelect = screen.getByTestId('narration-wpm-select');
+    fireEvent.change(wpmSelect, { target: { value: '180' } });
+
+    const synthBtn = screen.getByText('Synthesize Audio');
+    fireEvent.click(synthBtn);
+
+    await waitFor(() => {
+      expect(api.decks.synthesizeNarration).toHaveBeenCalledWith('deck-42', 'narrator-en', 180);
+      expect(screen.getByText(/Synthesized: 4.5s/)).toBeInTheDocument();
+    });
+  });
+});

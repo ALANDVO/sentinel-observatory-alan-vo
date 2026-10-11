@@ -1,0 +1,113 @@
+[
+  {
+    "deck_id": "bench-ai-safety",
+    "label": "Well-structured AI safety overview",
+    "expected_cognitive_score_min": 0.55,
+    "expected_mece_min": 0.7,
+    "slides": [
+      {
+        "id": "s0",
+        "position": 0,
+        "title": "AI Safety: Introduction",
+        "body_text": "\u2022 What is AI alignment?\n\u2022 Why does safety matter?\n\u2022 Who works on this?",
+        "speaker_notes": "Overview of the AI safety research field."
+      },
+      {
+        "id": "s1",
+        "position": 1,
+        "title": "Technical Approaches",
+        "body_text": "\u2022 Reinforcement learning from human feedback (RLHF)\n\u2022 Constitutional AI\n\u2022 Formal verification methods",
+        "speaker_notes": "Core training paradigms."
+      },
+      {
+        "id": "s2",
+        "position": 2,
+        "title": "Benchmark Evaluation",
+        "body_text": "\u2022 MMLU: 86.4% (GPT-4)\n\u2022 HumanEval: 67.0%\n\u2022 TruthfulQA: 59.0%",
+        "speaker_notes": "Standardized benchmark results."
+      },
+      {
+        "id": "s3",
+        "position": 3,
+        "title": "Open Challenges",
+        "body_text": "\u2022 Interpretability remains limited\n\u2022 Alignment tax on capability\n\u2022 Long-horizon planning risks",
+        "speaker_notes": "Known failure modes."
+      },
+      {
+        "id": "s4",
+        "position": 4,
+        "title": "Research Directions",
+        "body_text": "\u2022 Scalable oversight\n\u2022 Debate-based training\n\u2022 Weak-to-strong generalization",
+        "speaker_notes": "Current research frontiers."
+      }
+    ],
+    "source_data": [
+      {
+        "mmlu": 86.4,
+        "humaneval": 67.0,
+        "truthfulqa": 59.0
+      }
+    ]
+  },
+  {
+    "deck_id": "bench-dense-bad",
+    "label": "Overly dense slide deck (should score lower)",
+    "expected_cognitive_score_min": 0.0,
+    "expected_cognitive_score_max": 0.65,
+    "expected_mece_min": 0.0,
+    "slides": [
+      {
+        "id": "s0",
+        "position": 0,
+        "title": "Everything About Everything",
+        "body_text": "\u2022 Complex multi-clause technical concept number 0 with extensive elaboration\n\u2022 Complex multi-clause technical concept number 1 with extensive elaboration\n\u2022 Complex multi-clause technical concept number 2 with extensive elaboration\n\u2022 Complex multi-clause technical concept number 3 with extensive elaboration\n\u2022 Complex multi-clause technical concept number 4 with extensive elaboration\n\u2022 Complex multi-clause technical concept number 5 with extensive elaboration\n\u2022 Complex multi-clause technical concept number 6 with extensive elaboration\n\u2022 Complex multi-clause technical concept number 7 with extensive elaboration\n\u2022 Complex multi-clause technical concept number 8 with extensive elaboration\n\u2022 Complex multi-clause technical concept number 9 with extensive elaboration\n\u2022 Complex multi-clause technical concept number 10 with extensive elaboration\n\u2022 Complex multi-clause technical concept number 11 with extensive elaboration",
+        "speaker_notes": "Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. Dense and long. "
+      },
+      {
+        "id": "s1",
+        "position": 1,
+        "title": "Everything About Everything Part Two",
+        "body_text": "\u2022 Another comprehensive overview of topic 0 with complex academic jargon and dense phrasing\n\u2022 Another comprehensive overview of topic 1 with complex academic jargon and dense phrasing\n\u2022 Another comprehensive overview of topic 2 with complex academic jargon and dense phrasing\n\u2022 Another comprehensive overview of topic 3 with complex academic jargon and dense phrasing\n\u2022 Another comprehensive overview of topic 4 with complex academic jargon and dense phrasing\n\u2022 Another comprehensive overview of topic 5 with complex academic jargon and dense phrasing\n\u2022 Another comprehensive overview of topic 6 with complex academic jargon and dense phrasing\n\u2022 Another comprehensive overview of topic 7 with complex academic jargon and dense phrasing\n\u2022 Another comprehensive overview of topic 8 with complex academic jargon and dense phrasing\n\u2022 Another comprehensive overview of topic 9 with complex academic jargon and dense phrasing\n\u2022 Another comprehensive overview of topic 10 with complex academic jargon and dense phrasing\n\u2022 Another comprehensive overview of topic 11 with complex academic jargon and dense phrasing"
+      },
+      {
+        "id": "s2",
+        "position": 2,
+        "title": "Everything About Everything Part Three",
+        "body_text": "More content about everything and anything with no structure or hierarchy."
+      }
+    ],
+    "source_data": []
+  },
+  {
+    "deck_id": "bench-mece-good",
+    "label": "Distinct slide titles (high MECE alignment)",
+    "expected_mece_min": 0.75,
+    "slides": [
+      {
+        "id": "s0",
+        "position": 0,
+        "title": "Problem Statement",
+        "body_text": "\u2022 Define the challenge.\n\u2022 Scope boundaries."
+      },
+      {
+        "id": "s1",
+        "position": 1,
+        "title": "Data Collection Methods",
+        "body_text": "\u2022 Survey approach.\n\u2022 Experimental design."
+      },
+      {
+        "id": "s2",
+        "position": 2,
+        "title": "Statistical Analysis Results",
+        "body_text": "\u2022 ANOVA results.\n\u2022 Regression coefficients."
+      },
+      {
+        "id": "s3",
+        "position": 3,
+        "title": "Conclusions and Next Steps",
+        "body_text": "\u2022 Summary of findings.\n\u2022 Recommended actions."
+      }
+    ],
+    "source_data": []
+  }
+]

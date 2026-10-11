@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinel-observatory-alan-vo"
+version = "1.0.0"
+description = "AI presentation generation and slide-intelligence observatory that evaluates cognitive load, data grounding, and compiles native PowerPoint decks."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Alan Vo", email = "alanvo@gmail.com" }
+]
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Office/Business :: Presentation",
+]
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "pydantic>=2.8.0",
+    "sqlalchemy>=2.0.0",
+    "httpx>=0.27.0",
+    "python-pptx>=1.0.0",
+    "pyjwt>=2.8.0",
+    "cryptography>=43.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]

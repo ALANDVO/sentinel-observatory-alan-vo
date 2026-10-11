@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "name": "sentinel-observatory-alan-vo",
+  "owner": "ALANDVO",
+  "email": "alanvo@gmail.com",
+  "domain": "AI/ML developer tools",
+  "summary": "Work in progress: sentinel-observatory-alan-vo",
+  "workflows": [
+    "topic-to-deck-generation",
+    "deck-observatory-and-eval",
+    "template-studio-and-export"
+  ],
+  "auth": "oidc-keycloak-saml-broker",
+  "llm_providers": [
+    "openai-compatible",
+    "anthropic",
+    "gemini",
+    "ollama"
+  ],
+  "version": "1.0.0",
+  "status": "work-in-progress"
+}

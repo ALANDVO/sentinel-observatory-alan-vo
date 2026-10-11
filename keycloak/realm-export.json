@@ -1,0 +1,84 @@
+{
+  "realm": "sentinel",
+  "enabled": true,
+  "displayName": "Sentinel Observatory Realm",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Administrator with full presentation and observatory permissions"
+      },
+      {
+        "name": "operator",
+        "description": "Operator with presentation creation, evaluation, and export permissions"
+      },
+      {
+        "name": "viewer",
+        "description": "Read-only viewer for decks, reports, and evaluations"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "sentinel-client",
+      "name": "Sentinel Observatory Frontend",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://127.0.0.1:5173/*",
+        "http://localhost:5173/*",
+        "http://127.0.0.1:8000/*"
+      ],
+      "webOrigins": [
+        "http://127.0.0.1:5173",
+        "http://localhost:5173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://127.0.0.1:5173/*##http://localhost:5173/*"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "demo-analyst",
+      "enabled": true,
+      "email": "analyst@sentinel.local",
+      "firstName": "Demo",
+      "lastName": "Analyst",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "analyst_password_for_local_dev_only",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["operator"]
+    },
+    {
+      "username": "demo-admin",
+      "enabled": true,
+      "email": "admin@sentinel.local",
+      "firstName": "Demo",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin_password_for_local_dev_only",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin"]
+    }
+  ]
+}

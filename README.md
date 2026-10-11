@@ -23,6 +23,7 @@ Sentinel Observatory turns documents or topics into native PowerPoint decks thro
 | **Data Fidelity Audit** | Cross-validate numeric claims in slides against source data tables; reports precision, recall, and unsupported claims |
 | **Attribution Guard** | Structural integrity check with actionable diagnostics (cross-platform, fail-closed, structured error codes ATTR-001 through ATTR-006) |
 | **Prompt & Locale Audit** | Token-budget, locale dictionary placeholder parity, and doc structural translation drift audit (#302, #303, #304) |
+| **Audio Narration** | Synthesize deterministic offline RIFF/WAVE PCM audio tracks from speaker notes with 4 voices and variable speech pacing (80–300 WPM) |
 | **Native PPTX Export** | Compile to real `.pptx` with native bar/line/pie charts, styled tables, slide transitions, and speaker notes via `python-pptx` |
 | **Template Studio** | Register custom `.pptx` templates; scan master slides, placeholder layouts, and theme palettes |
 | **Advisory LLM** | Opt-in explanations via OpenAI-compatible, Anthropic, or Gemini adapters; clearly labeled advisory, never fabricated |
@@ -74,6 +75,9 @@ PYTHONPATH=. .venv/bin/python -m backend.app.services.attribution_guard .
 # Standalone Prompt & Locale dictionary audit (#302, #303):
 PYTHONPATH=. .venv/bin/python -m backend.app.services.prompt_audit --dict locales/en.json
 PYTHONPATH=. .venv/bin/python -m backend.app.services.prompt_audit --doc docs/en.md docs/zh.md
+
+# Standalone Audio Narration synthesis CLI:
+PYTHONPATH=. .venv/bin/python -m backend.app.services.audio_narration --text "Sample speaker notes" --voice narrator-en --wpm 150
 ```
 
 **Approach:** Multi-factor rubric with five independent metrics:

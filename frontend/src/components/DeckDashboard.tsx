@@ -74,12 +74,12 @@ export const DeckDashboard: React.FC<DeckDashboardProps> = ({
                 <span className="tag">{d.source_type}</span>
                 <span className="tag status-tag">{d.status}</span>
               </div>
-              <h3 className="card-title" style={{ margin: '.5rem 0' }}>{d.title}</h3>
-              <div className="card-meta" style={{ fontSize: '.8rem', color: 'var(--muted)' }}>
+              <h3 className="card-title">{d.title}</h3>
+              <div className="card-meta">
                 <span>{d.slide_count} slides</span>
                 <span>• {new Date(d.created_at).toLocaleDateString()}</span>
               </div>
-              <div className="card-actions" style={{ marginTop: '.75rem' }} onClick={(e) => e.stopPropagation()}>
+              <div className="card-actions" onClick={(e) => e.stopPropagation()}>
                 <button className="btn-secondary btn-sm" onClick={() => onSelectDeck(d.id)}>Open</button>
                 <button className="btn-danger btn-sm" onClick={() => onDeleteDeck(d.id)}>Delete</button>
               </div>
@@ -113,7 +113,7 @@ export const DeckDashboard: React.FC<DeckDashboardProps> = ({
               )}
               <div className="form-group">
                 <label>Target Slide Count ({slideCount})</label>
-                <input type="range" min={3} max={20} value={slideCount} onChange={(e) => setSlideCount(Number(e.target.value))} style={{ width: '100%' }} />
+                <input type="range" min={3} max={20} value={slideCount} onChange={(e) => setSlideCount(Number(e.target.value))} className="w-full" />
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>

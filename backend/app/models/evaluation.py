@@ -2,16 +2,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-
 from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
-
-from backend.app.core.database import Base
-
-
-def _now_utc():
-    return datetime.now(timezone.utc)
+from backend.app.core.database import Base, now_utc
 
 
 class Evaluation(Base):
@@ -49,6 +42,6 @@ class Evaluation(Base):
     llm_provider_used = Column(String(64), nullable=True)
 
     raw_result = Column(JSON, default=dict)
-    created_at = Column(DateTime(timezone=True), default=_now_utc)
+    created_at = Column(DateTime(timezone=True), default=now_utc)
 
     deck = relationship("Deck", back_populates="evaluations")

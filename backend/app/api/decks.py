@@ -50,6 +50,10 @@ def _safe_fn(title: str, ext: str) -> str:
 def _deck_slides(deck: Deck) -> list[dict]:
     return [{"id": s.id, "position": s.position, "slide_type": s.slide_type, "title": s.title, "body_text": s.body_text, "bullets": (s.body_text or "").split("\n") if s.body_text else [], "speaker_notes": s.speaker_notes, "chart_data": s.chart_data, "table_data": s.table_data} for s in sorted(deck.slides, key=lambda x: x.position)]
 
+def _finish_deck_create(db: Session, deck: Deck, user: dict, src: str) -> DeckOut:
+    _audit.log(db, "create_deck", actor_sub=user.get("sub"), actor_email=user.get("email"), resource_type="deck", resource_id=deck.id, detail={"source_type": src})
+    db.commit(); db.refresh(deck); return DeckOut.model_validate(deck)
+
 @router.get("", response_model=DeckListResponse)
 def list_decks(skip: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=100), source_type: str | None = None, status: str | None = Query(None, alias="status"), db: Session = Depends(get_db), user: dict = Depends(get_current_user)) -> DeckListResponse:
     q = db.query(Deck)
@@ -59,15 +63,11 @@ def list_decks(skip: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=100),
 
 @router.post("/generate/topic", response_model=DeckOut, status_code=status.HTTP_201_CREATED)
 def generate_from_topic(body: GenerateTopicRequest, db: Session = Depends(get_db), user: dict = Depends(require_role(Role.OPERATOR))) -> DeckOut:
-    deck = _gen.generate_from_topic(db, body.topic, author_sub=user.get("sub"), template_id=body.template_id, slide_count=body.slide_count)
-    _audit.log(db, "create_deck", actor_sub=user.get("sub"), actor_email=user.get("email"), resource_type="deck", resource_id=deck.id, detail={"source_type": "topic"})
-    db.commit(); db.refresh(deck); return DeckOut.model_validate(deck)
+    return _finish_deck_create(db, _gen.generate_from_topic(db, body.topic, author_sub=user.get("sub"), template_id=body.template_id, slide_count=body.slide_count), user, "topic")
 
 @router.post("/generate/document", response_model=DeckOut, status_code=status.HTTP_201_CREATED)
 def generate_from_document(body: GenerateDocumentRequest, db: Session = Depends(get_db), user: dict = Depends(require_role(Role.OPERATOR))) -> DeckOut:
-    deck = _gen.generate_from_document(db, body.text, author_sub=user.get("sub"), template_id=body.template_id, slide_count=body.slide_count)
-    _audit.log(db, "create_deck", actor_sub=user.get("sub"), actor_email=user.get("email"), resource_type="deck", resource_id=deck.id, detail={"source_type": "document"})
-    db.commit(); db.refresh(deck); return DeckOut.model_validate(deck)
+    return _finish_deck_create(db, _gen.generate_from_document(db, body.text, author_sub=user.get("sub"), template_id=body.template_id, slide_count=body.slide_count), user, "document")
 
 @router.get("/{deck_id}", response_model=DeckOut)
 def get_deck(deck_id: str, db: Session = Depends(get_db), user: dict = Depends(get_current_user)) -> DeckOut:
@@ -103,7 +103,7 @@ def export_pptx(deck_id: str, db: Session = Depends(get_db), user: dict = Depend
 @router.post("/{deck_id}/narration/synthesize")
 def synthesize_narration(deck_id: str, voice: str = Query("narrator-en"), words_per_minute: int = Query(150, ge=80, le=300), db: Session = Depends(get_db), user: dict = Depends(require_role(Role.OPERATOR))) -> dict:
     deck = _get_deck(db, deck_id)
-    n = _narr.synthesize_deck(deck_id, [{"id": s.id, "position": s.position, "title": s.title, "speaker_notes": s.speaker_notes} for s in sorted(deck.slides, key=lambda x: x.position)], voice=voice, words_per_minute=words_per_minute)
+    n = _narr.synthesize_deck(deck_id, _deck_slides(deck), voice=voice, words_per_minute=words_per_minute)
     deck.meta = {**(deck.meta or {}), "narration": {"voice": voice, "words_per_minute": words_per_minute, "total_duration_seconds": n.total_duration_seconds, "total_words": n.total_words, "slide_count": len(n.slides)}}
     _audit.log(db, "synthesize_narration", actor_sub=user.get("sub"), actor_email=user.get("email"), resource_type="deck", resource_id=deck_id, detail={"voice": voice, "words_per_minute": words_per_minute})
     db.commit()
@@ -112,7 +112,7 @@ def synthesize_narration(deck_id: str, voice: str = Query("narrator-en"), words_
 @router.get("/{deck_id}/narration/audio")
 def get_deck_narration_audio(deck_id: str, voice: str = Query("narrator-en"), words_per_minute: int = Query(150, ge=80, le=300), db: Session = Depends(get_db), user: dict = Depends(require_role(Role.VIEWER))) -> Response:
     deck = _get_deck(db, deck_id)
-    n = _narr.synthesize_deck(deck_id, [{"id": s.id, "position": s.position, "title": s.title, "speaker_notes": s.speaker_notes} for s in sorted(deck.slides, key=lambda x: x.position)], voice=voice, words_per_minute=words_per_minute)
+    n = _narr.synthesize_deck(deck_id, _deck_slides(deck), voice=voice, words_per_minute=words_per_minute)
     return Response(content=n.audio_bytes, media_type="audio/wav", headers={"Content-Disposition": f'inline; filename="{_safe_fn(deck.title, "wav")}"'})
 
 @router.get("/{deck_id}/slides/{slide_id}/narration/audio")

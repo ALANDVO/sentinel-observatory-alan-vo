@@ -15,12 +15,14 @@ SLIDE_WIDTH, SLIDE_HEIGHT = Inches(13.33), Inches(7.5)
 COLOR_TITLE, COLOR_TEXT, COLOR_HIGHLIGHT = RGBColor(0x1A, 0x1A, 0x2E), RGBColor(0x2D, 0x2D, 0x2D), RGBColor(0x0F, 0x3C, 0x78)
 CHART_MAP = {"line": XL_CHART_TYPE.LINE, "bar": XL_CHART_TYPE.BAR_CLUSTERED, "pie": XL_CHART_TYPE.PIE, "area": XL_CHART_TYPE.AREA, "doughnut": XL_CHART_TYPE.DOUGHNUT}
 
+_XMLNS = 'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+
 def _apply_slide_transition(slide: Any, transition_type: str = "fade", speed: str = "med") -> None:
     t = transition_type if transition_type in {"fade", "push", "wipe", "cut", "zoom", "cover", "split"} else "fade"
-    slide._element.append(parse_xml(f'<p:transition xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" spd="{speed}" advClick="1"><p:{t}/></p:transition>'))
+    slide._element.append(parse_xml(f'<p:transition {_XMLNS} spd="{speed}" advClick="1"><p:{t}/></p:transition>'))
 
 def _apply_slide_animations(slide: Any, shape_ids: list[int] | None = None, effect: str = "appear") -> None:
-    slide._element.append(parse_xml('<p:timing xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="always" nodeType="tmRoot"/></p:par></p:tnLst></p:timing>'))
+    slide._element.append(parse_xml(f'<p:timing {_XMLNS}><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="always" nodeType="tmRoot"/></p:par></p:tnLst></p:timing>'))
 
 def _add_text_box(slide: Any, text: str, left: Any, top: Any, width: Any, height: Any, font_size: int = 18, bold: bool = False, color: RGBColor = COLOR_TEXT, align: Any = PP_ALIGN.LEFT) -> Any:
     tx = slide.shapes.add_textbox(left, top, width, height)
@@ -75,15 +77,16 @@ def _compile_kpi_slide(prs: Presentation, d: dict[str, Any]) -> None:
     for i, b in enumerate(bullets, start=1): _add_text_box(s, b, Inches(1.0), Inches(1.5 + (i * 0.8)), Inches(11.0), Inches(0.6), 20, True, COLOR_TEXT)
     _finish(s, d, "appear", "appear")
 
-def _compile_comparison_slide(prs: Presentation, d: dict[str, Any]) -> None:
+def _compile_placeholder_slide(prs: Presentation, d: dict[str, Any], trans: str, key: str, subkey: str) -> None:
     s = _make_slide(prs, 1, d)
-    if len(s.shapes.placeholders) > 1 and d.get("comparison", {}).get("left_title"): s.shapes.placeholders[1].text = d["comparison"]["left_title"]
-    _finish(s, d, "wipe", "wipe")
+    if len(s.shapes.placeholders) > 1 and d.get(key, {}).get(subkey): s.shapes.placeholders[1].text = str(d[key][subkey])
+    _finish(s, d, trans, trans)
+
+def _compile_comparison_slide(prs: Presentation, d: dict[str, Any]) -> None:
+    _compile_placeholder_slide(prs, d, "wipe", "comparison", "left_title")
 
 def _compile_process_slide(prs: Presentation, d: dict[str, Any]) -> None:
-    s = _make_slide(prs, 1, d)
-    if len(s.shapes.placeholders) > 1 and d.get("process", {}).get("steps"): s.shapes.placeholders[1].text = str(d["process"]["steps"])
-    _finish(s, d, "push", "push")
+    _compile_placeholder_slide(prs, d, "push", "process", "steps")
 
 _SLIDE_COMPILERS = {"title": _compile_title_slide, "content": _compile_content_slide, "chart": _compile_chart_slide, "table": _compile_table_slide, "kpi": _compile_kpi_slide, "comparison": _compile_comparison_slide, "process": _compile_process_slide}
 

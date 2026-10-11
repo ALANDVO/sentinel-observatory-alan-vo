@@ -16,35 +16,16 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class OIDCConfig(BaseModel):
-    issuer: str
-    client_id: str
-    authorization_endpoint: str
-    token_endpoint: str
-    jwks_uri: str
-    end_session_endpoint: str
-
+    issuer: str; client_id: str; authorization_endpoint: str; token_endpoint: str; jwks_uri: str; end_session_endpoint: str
 
 @router.get("/config", response_model=OIDCConfig)
 def get_oidc_config() -> OIDCConfig:
-    """Return OIDC configuration for the frontend PKCE flow."""
     issuer = os.getenv("OIDC_ISSUER_URL", "http://127.0.0.1:8080/realms/sentinel")
     client_id = os.getenv("OIDC_CLIENT_ID", "sentinel-client")
-    return OIDCConfig(
-        issuer=issuer,
-        client_id=client_id,
-        authorization_endpoint=f"{issuer}/protocol/openid-connect/auth",
-        token_endpoint=f"{issuer}/protocol/openid-connect/token",
-        jwks_uri=f"{issuer}/protocol/openid-connect/certs",
-        end_session_endpoint=f"{issuer}/protocol/openid-connect/logout",
-    )
-
+    return OIDCConfig(issuer=issuer, client_id=client_id, authorization_endpoint=f"{issuer}/protocol/openid-connect/auth", token_endpoint=f"{issuer}/protocol/openid-connect/token", jwks_uri=f"{issuer}/protocol/openid-connect/certs", end_session_endpoint=f"{issuer}/protocol/openid-connect/logout")
 
 class UserInfo(BaseModel):
-    sub: str
-    email: str | None = None
-    preferred_username: str | None = None
-    roles: list[str] = []
-    demo: bool = False
+    sub: str; email: str | None = None; preferred_username: str | None = None; roles: list[str] = []; demo: bool = False
 
 
 @router.get("/me", response_model=UserInfo)

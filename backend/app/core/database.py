@@ -1,10 +1,12 @@
-"""Database setup and session management for Sentinel Observatory."""
 import os
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from typing import Generator
-
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+
+def now_utc():
+    return datetime.now(timezone.utc)
 
 
 def _get_database_url() -> str:

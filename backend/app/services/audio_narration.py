@@ -28,15 +28,13 @@ class AudioNarrationService:
         raw = (text or "").strip() or (f"Slide: {fallback_title.strip()}." if fallback_title else "")
         if not raw: return "No notes provided for this slide."
         cleaned = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", raw)
-        return re.sub(r"\s+", " ", re.sub(r"[*_~`#>]", " ", cleaned)).strip() or "No notes provided for this slide."
+        return " ".join(re.sub(r"[*_~`#>]", " ", cleaned).split()) or "No notes provided for this slide."
 
     def synthesize_wav_pcm(self, transcript: str, voice: str = "narrator-en", sample_rate: int = 16000, words_per_minute: int = 150) -> tuple[bytes, float]:
-        wpm = max(80, min(300, words_per_minute))
-        words = [w for w in re.split(r"\s+", transcript.strip()) if w]
+        wpm, words = max(80, min(300, words_per_minute)), transcript.split()
         dur = max(1.5, round((max(1, len(words)) / wpm) * 60.0, 2))
         f0 = self.VOICE_FREQS.get(voice, 175.0)
-        ns = int(sample_rate * dur)
-        buf = io.BytesIO()
+        ns, buf = int(sample_rate * dur), io.BytesIO()
         with wave.open(buf, "wb") as wf:
             wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(sample_rate)
             data = bytearray()
@@ -51,7 +49,7 @@ class AudioNarrationService:
     def synthesize_slide(self, slide_id: str, position: int, speaker_notes: str | None, title: str | None = None, voice: str = "narrator-en", words_per_minute: int = 150) -> SlideNarration:
         tr = self._clean_transcript(speaker_notes, title)
         b, dur = self.synthesize_wav_pcm(tr, voice, words_per_minute=words_per_minute)
-        return SlideNarration(slide_id, position, tr, len([w for w in re.split(r"\s+", tr) if w]), dur, b, words_per_minute=words_per_minute)
+        return SlideNarration(slide_id, position, tr, len(tr.split()), dur, b, words_per_minute=words_per_minute)
 
     def synthesize_deck(self, deck_id: str, slides: list[dict[str, Any]], voice: str = "narrator-en", words_per_minute: int = 150) -> DeckNarration:
         narrs = [self.synthesize_slide(str(s.get("id", f"pos_{s.get('position', 0)}")), int(s.get("position", 0)), s.get("speaker_notes"), s.get("title"), voice, words_per_minute=words_per_minute) for s in sorted(slides, key=lambda x: x.get("position", 0))]
@@ -79,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
     if not (80 <= args.wpm <= 300):
         sys.stderr.write(f"[AudioNarration] ERROR: --wpm must be between 80 and 300 (got {args.wpm}).\n"); return 1
     raw, dur = AudioNarrationService().synthesize_wav_pcm(args.text, voice=args.voice, words_per_minute=args.wpm)
-    wc = len([w for w in re.split(r"\s+", args.text.strip()) if w])
+    wc = len(args.text.split())
     if args.out:
         with open(args.out, "wb") as fh: fh.write(raw)
     info = {"voice": args.voice, "words_per_minute": args.wpm, "word_count": wc, "duration_seconds": dur, "sample_rate": 16000, "audio_bytes_length": len(raw), "status": "ok"}

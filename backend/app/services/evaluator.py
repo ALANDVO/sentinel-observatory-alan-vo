@@ -77,15 +77,15 @@ class EvaluationEngine:
             for m in num_re.finditer(f"{s.get('body_text') or ''} {s.get('title') or ''}"):
                 try: claims.append(float(m.group(1).replace(",", "")))
                 except ValueError: pass
-        if not claims:
-            return {"numeric_claims_found": 0, "claims_verified": 0, "data_fidelity_precision": 1.0, "data_fidelity_recall": 1.0, "unsupported_claims": []}
+        def _out(f: int, v: int, p: float, r: float, u: list) -> dict[str, Any]:
+            return {"numeric_claims_found": f, "claims_verified": v, "data_fidelity_precision": round(p, 3), "data_fidelity_recall": round(r, 3), "unsupported_claims": u}
+        if not claims: return _out(0, 0, 1.0, 1.0, [])
         src_vals = [float(v) for r in source_data for v in r.values() if isinstance(v, (int, float))]
-        if not src_vals:
-            return {"numeric_claims_found": len(claims), "claims_verified": 0, "data_fidelity_precision": 0.0, "data_fidelity_recall": 0.0, "unsupported_claims": [str(v) for v in claims[:10]]}
+        if not src_vals: return _out(len(claims), 0, 0.0, 0.0, [str(v) for v in claims[:10]])
         verified, unsupported = 0, []
         for cv in claims:
             if any(abs(cv - sv) / max(abs(sv), 1.0) < 0.05 for sv in src_vals): verified += 1
             else: unsupported.append(str(cv))
         prec = verified / len(claims) if claims else 1.0
         rec = verified / len(src_vals) if src_vals else 0.0
-        return {"numeric_claims_found": len(claims), "claims_verified": verified, "data_fidelity_precision": round(prec, 3), "data_fidelity_recall": round(rec, 3), "unsupported_claims": unsupported[:20]}
+        return _out(len(claims), verified, prec, rec, unsupported[:20])

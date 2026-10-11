@@ -2,16 +2,8 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-
 from sqlalchemy import JSON, Column, DateTime, String, Text
-
-from backend.app.core.database import Base
-
-
-def _now_utc():
-    return datetime.now(timezone.utc)
-
+from backend.app.core.database import Base, now_utc
 
 class AuditLog(Base):
     __tablename__ = "audit_log"
@@ -24,4 +16,4 @@ class AuditLog(Base):
     resource_id = Column(String(36), nullable=True)
     detail = Column(JSON, nullable=True)
     ip_address = Column(String(64), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=_now_utc, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=now_utc, nullable=False)

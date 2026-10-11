@@ -85,9 +85,9 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
             )}
           </div>
           {latestEval.llm_advisory && (
-            <div className="advisory-box" style={{ marginTop: '1rem', padding: '1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+            <div className="advisory-box">
               <h4>🤖 Advisory Insights ({latestEval.llm_provider_used})</h4>
-              <p style={{ fontSize: '.9rem', color: '#334155' }}>{latestEval.llm_advisory}</p>
+              <p>{latestEval.llm_advisory}</p>
             </div>
           )}
         </div>

@@ -91,14 +91,14 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
               <div className="speaker-notes-panel" style={{ marginTop: '1rem' }} data-testid="narration-panel">
                 <div className="section-header">
                   <h4>🎧 Audio Narration</h4>
-                  <div className="card-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <select aria-label="Narration Voice" className="form-control" style={{ width: 'auto', padding: '.25rem .5rem', fontSize: '.85rem' }} value={voice} onChange={(e) => setVoice(e.target.value)}>
+                  <div className="card-actions">
+                    <select aria-label="Narration Voice" className="form-control select-sm" value={voice} onChange={(e) => setVoice(e.target.value)}>
                       <option value="narrator-en">Default Narrator</option>
                       <option value="narrator-exec">Executive Voice</option>
                       <option value="narrator-tech">Technical Voice</option>
                       <option value="narrator-calm">Calm Voice</option>
                     </select>
-                    <select aria-label="Narration Pace" data-testid="narration-wpm-select" className="form-control" style={{ width: 'auto', padding: '.25rem .5rem', fontSize: '.85rem' }} value={wpm} onChange={(e) => setWpm(Number(e.target.value))}>
+                    <select aria-label="Narration Pace" data-testid="narration-wpm-select" className="form-control select-sm" value={wpm} onChange={(e) => setWpm(Number(e.target.value))}>
                       <option value={120}>Deliberate (120 WPM)</option>
                       <option value={150}>Standard (150 WPM)</option>
                       <option value={180}>Brisk (180 WPM)</option>
@@ -109,10 +109,10 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
                 </div>
                 <div style={{ marginTop: '.75rem' }}>
                   <p style={{ fontSize: '.85rem', color: 'var(--muted)', marginBottom: '.5rem' }}>Deck Narration Audio (RIFF/WAVE PCM track):</p>
-                  <audio data-testid="deck-audio-player" controls style={{ width: '100%', marginBottom: '.5rem' }} src={`${api.decks.narrationAudioUrl(deck.id, voice, wpm)}&t=${audioTimestamp}`} />
+                  <audio data-testid="deck-audio-player" controls className="audio-player" src={`${api.decks.narrationAudioUrl(deck.id, voice, wpm)}&t=${audioTimestamp}`} />
                   <div className="card-actions">
                     <a className="btn-secondary btn-sm" href={api.decks.narrationAudioUrl(deck.id, voice, wpm)} download={`${deck.title.replace(/\s+/g, '_')}_narration.wav`}>⬇️ Download Deck Audio (.wav)</a>
-                    {narrationData && <span className="tag" style={{ background: '#e0f2fe', color: '#0369a1' }}>Synthesized: {narrationData.total_duration_seconds}s ({narrationData.total_words} words @ {wpm} wpm)</span>}
+                    {narrationData && <span className="tag tag-info">Synthesized: {narrationData.total_duration_seconds}s ({narrationData.total_words} words @ {wpm} wpm)</span>}
                   </div>
                 </div>
               </div>

@@ -56,10 +56,7 @@ def _get_deck_or_404(db: Session, deck_id: str) -> Deck:
         raise HTTPException(404, f"Deck {deck_id!r} not found")
     return d
 
-def _slides_to_dicts(slides) -> list[dict]:
-    return [{"id": s.id, "position": s.position, "slide_type": s.slide_type, "title": s.title or "",
-             "body_text": s.body_text or "", "speaker_notes": s.speaker_notes or "",
-             "chart_data": s.chart_data, "table_data": s.table_data} for s in sorted(slides, key=lambda s: s.position)]
+from backend.app.api.decks import _deck_slides
 
 @router.get("", response_model=EvaluationListResponse)
 def list_evaluations(deck_id: str | None = Query(None), skip: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db), user: dict = Depends(get_current_user)) -> EvaluationListResponse:
@@ -69,7 +66,7 @@ def list_evaluations(deck_id: str | None = Query(None), skip: int = Query(0, ge=
 
 @router.post("/decks/{deck_id}/run", response_model=EvaluationOut, status_code=status.HTTP_201_CREATED)
 def run_evaluation(deck_id: str, body: RunEvaluationRequest, db: Session = Depends(get_db), user: dict = Depends(require_role(Role.OPERATOR))) -> EvaluationOut:
-    deck = _get_deck_or_404(db, deck_id); s_data = _slides_to_dicts(deck.slides)
+    deck = _get_deck_or_404(db, deck_id); s_data = _deck_slides(deck)
     ev = Evaluation(deck_id=deck_id, evaluator_sub=user.get("sub"), eval_type=body.eval_type)
     if body.eval_type in ("full", "cognitive_load"):
         r = _eval_engine.evaluate_deck(deck_id, s_data)
@@ -107,7 +104,7 @@ def get_evaluation(evaluation_id: str, db: Session = Depends(get_db), user: dict
 @router.post("/prompt-audit", status_code=status.HTTP_200_OK)
 def run_prompt_audit(deck_id: str = Query(...), body: PromptAuditRequest = Body(...), db: Session = Depends(get_db), user: dict = Depends(require_role(Role.OPERATOR))) -> dict:
     deck = _get_deck_or_404(db, deck_id)
-    return _prompt_audit.audit_slide_content(_slides_to_dicts(deck.slides), model=body.model, locale_keys_per_slide=body.locale_keys_per_slide).to_dict()
+    return _prompt_audit.audit_slide_content(_deck_slides(deck), model=body.model, locale_keys_per_slide=body.locale_keys_per_slide).to_dict()
 
 @router.post("/locale-audit", status_code=status.HTTP_200_OK)
 def run_locale_audit(body: LocaleDictAuditRequest, user: dict = Depends(require_role(Role.OPERATOR))) -> dict:

@@ -41,4 +41,10 @@ body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,
 .score-badge{padding:.15rem .5rem;border-radius:4px;font-size:1rem}
 .color-swatch{width:14px;height:14px;border-radius:3px;display:inline-block}
 .chip{background:var(--border);font-size:.65rem;padding:.15rem .35rem;border-radius:3px;margin-right:.3rem}
+.select-sm{width:auto;padding:.25rem .5rem;font-size:.85rem}
+.audio-player{width:100%;margin-bottom:.5rem}
+.tag-info{background:#e0f2fe;color:#0369a1}
+.card-meta{font-size:.8rem;color:var(--muted)}
+.card-title{margin:.5rem 0}
+.w-full{width:100%}
 .app-footer{border-top:1px solid var(--border);padding:1rem;text-align:center;font-size:.75rem;color:var(--muted)}

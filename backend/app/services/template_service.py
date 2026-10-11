@@ -51,11 +51,10 @@ class TemplateService:
 
     def seed_builtin_templates(self, db: Session) -> None:
         if db.query(Template).filter(Template.is_builtin == "true").count() > 0: return
-        builtins = [
-            {"name": "Executive Brief", "description": "Minimal executive deck.", "theme_color": "#1A1A2E", "layout_names": ["Title Slide", "Content", "Chart", "Table"]},
-            {"name": "Research Report", "description": "Academic research findings.", "theme_color": "#0F3C78", "layout_names": ["Title Slide", "Section Header", "Comparison"]},
-            {"name": "Data Dashboard", "description": "Data-dense KPI template.", "theme_color": "#162136", "layout_names": ["Title Slide", "KPI Overview", "Chart", "Table"]},
-        ]
-        for t in builtins:
-            db.add(Template(name=t["name"], description=t["description"], theme_color=t["theme_color"], layout_names=t["layout_names"], placeholder_map={}, is_builtin="true"))
+        for n, d, c, l in [
+            ("Executive Brief", "Minimal executive deck.", "#1A1A2E", ["Title Slide", "Content", "Chart", "Table"]),
+            ("Research Report", "Academic research findings.", "#0F3C78", ["Title Slide", "Section Header", "Comparison"]),
+            ("Data Dashboard", "Data-dense KPI template.", "#162136", ["Title Slide", "KPI Overview", "Chart", "Table"]),
+        ]:
+            db.add(Template(name=n, description=d, theme_color=c, layout_names=l, placeholder_map={}, is_builtin="true"))
         db.commit()

@@ -53,10 +53,10 @@ class AttributionGuard:
     def validate_workspace(self, workspace_path: str) -> AttributionReport:
         p, np = Path(os.path.normpath(workspace_path)), str(PurePath(workspace_path))
         if not p.is_dir(): return AttributionReport(False, 1, [_item("workspace_is_dir", "ATTR-DIR-001", "error", f"Workspace directory not found: '{np}'", np, "Specify a valid directory.")])
-        diag, sfiles = [], sorted(list(p.glob("*.json")) + list(p.glob("*.txt")))
-        if not sfiles: diag.append(_item("workspace_has_sources", "ATTR-DIR-002", "warning", f"No source files (.json, .txt) found in '{np}'.", np, "Place presentation source files in workspace."))
-        else:
-            for sf in sfiles[:10]: diag.extend(self.validate_from_file(str(sf)).diagnostics)
+        sfiles = sorted([*p.glob("*.json"), *p.glob("*.txt")])
+        if not sfiles: return AttributionReport(True, 1, [_item("workspace_has_sources", "ATTR-DIR-002", "warning", f"No source files (.json, .txt) found in '{np}'.", np, "Place presentation source files in workspace.")])
+        diag = []
+        for sf in sfiles[:10]: diag.extend(self.validate_from_file(str(sf)).diagnostics)
         return AttributionReport(not any(d.severity == "error" for d in diag), 1 + len(sfiles), diag)
 
 def main(argv: list[str] | None = None) -> int:

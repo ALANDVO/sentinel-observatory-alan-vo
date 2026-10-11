@@ -2,16 +2,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
-
-from backend.app.core.database import Base
-
-
-def _now_utc():
-    return datetime.now(timezone.utc)
+from backend.app.core.database import Base, now_utc
 
 
 class Deck(Base):
@@ -28,8 +21,8 @@ class Deck(Base):
     slide_count = Column(Integer, default=0)
     version = Column(Integer, default=1)
     meta = Column(JSON, default=dict)
-    created_at = Column(DateTime(timezone=True), default=_now_utc)
-    updated_at = Column(DateTime(timezone=True), default=_now_utc, onupdate=_now_utc)
+    created_at = Column(DateTime(timezone=True), default=now_utc)
+    updated_at = Column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 
     slides = relationship("Slide", back_populates="deck", cascade="all, delete-orphan", order_by="Slide.position")
     evaluations = relationship("Evaluation", back_populates="deck", cascade="all, delete-orphan")
@@ -49,6 +42,6 @@ class Slide(Base):
     chart_data = Column(JSON, nullable=True)
     table_data = Column(JSON, nullable=True)
     layout_config = Column(JSON, default=dict)
-    created_at = Column(DateTime(timezone=True), default=_now_utc)
+    created_at = Column(DateTime(timezone=True), default=now_utc)
 
     deck = relationship("Deck", back_populates="slides")

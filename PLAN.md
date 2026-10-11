@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-dynamic-version-and-lifespan
+audio-narration-pacing
 
 ## Roadmap
 
@@ -51,4 +51,26 @@ Acceptance:
 Implementation: `backend/app/main.py`, `backend/app/api/health.py`
 
 Tests: `backend/tests/test_auth_and_integration.py`, `backend/tests/test_persistence_audit.py`
+
+### audio-narration-pacing — Audio Narration Speech Synthesis and Variable Pacing Engine
+
+Status: done
+
+Acceptance:
+- Synthesize offline deterministic RIFF/WAVE PCM audio tracks for deck speaker notes with multiple voices (narrator-en, narrator-exec, narrator-tech, narrator-calm) and configurable speech pacing (80-300 WPM)
+- Provide standalone CLI (python -m backend.app.services.audio_narration) with fail-closed diagnostics, --out, and --json reporting
+- Expose REST API endpoints /api/decks/{id}/narration/synthesize and /api/decks/{id}/narration/audio with words_per_minute parameter
+- Support UI narration player, WPM pace selector, and audio download in DeckDetail.tsx
+- Maintain first-party source code strictly within 50,000–150,000 bytes budget and pass preflight inspection
+
+Implementation: `backend/app/services/audio_narration.py`, `backend/app/api/decks.py`, `frontend/src/components/DeckDetail.tsx`
+
+Tests: `backend/tests/test_audio_narration.py`, `frontend/src/__tests__/app.test.tsx`
+
+### export-pptx-smart-layout — Smart Layout and Auto-Alignment Engine for PPTX Export
+
+Status: planned
+
+Acceptance:
+- Calculate dynamic bounding boxes and proportional typography scaling based on bullet text density for complex shapes during PPTX generation
 

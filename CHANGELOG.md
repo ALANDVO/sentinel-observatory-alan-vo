@@ -1,8 +1,17 @@
 # Changelog
 
-## 1.5.0 — work-in-progress checkpoint
+## 1.6.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.5.0 — work-in-progress checkpoint
+
+- Added audio narration speech synthesis engine (`audio_narration.py`) supporting multiple voice profiles (`narrator-en`, `narrator-exec`, `narrator-tech`, `narrator-calm`) and configurable speech pacing (80–300 WPM).
+- Added standalone CLI interface for audio narration (`python -m backend.app.services.audio_narration`) with fail-closed validation, `--out` file saving, and `--json` structured diagnostics.
+- Added REST API endpoints `POST /api/decks/{id}/narration/synthesize`, `GET /api/decks/{id}/narration/audio`, and `GET /api/decks/{id}/slides/{slide_id}/narration/audio` with `words_per_minute` parameter.
+- Integrated audio narration player, speech pace selector (120–210 WPM), and audio download in frontend `DeckDetail.tsx`.
+- Refactored duplication across database models, slide extraction, and presentation compilers to maintain first-party source code strictly within 50,000–150,000 bytes.
+- Added automated backend tests in `test_audio_narration.py` and frontend UI tests in `app.test.tsx`.
 
 ## 1.4.0 — work-in-progress checkpoint
 

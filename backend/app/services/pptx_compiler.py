@@ -10,12 +10,13 @@ from pptx.enum.chart import XL_CHART_TYPE
 from pptx.enum.text import PP_ALIGN
 from pptx.oxml import parse_xml
 from pptx.util import Inches, Pt
+from backend.app.services.layout_engine import SlideLayoutEngine
 
 SLIDE_WIDTH, SLIDE_HEIGHT = Inches(13.33), Inches(7.5)
 COLOR_TITLE, COLOR_TEXT, COLOR_HIGHLIGHT = RGBColor(0x1A, 0x1A, 0x2E), RGBColor(0x2D, 0x2D, 0x2D), RGBColor(0x0F, 0x3C, 0x78)
 CHART_MAP = {"line": XL_CHART_TYPE.LINE, "bar": XL_CHART_TYPE.BAR_CLUSTERED, "pie": XL_CHART_TYPE.PIE, "area": XL_CHART_TYPE.AREA, "doughnut": XL_CHART_TYPE.DOUGHNUT}
-
 _XMLNS = 'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+_LE = SlideLayoutEngine()
 
 def _apply_slide_transition(slide: Any, transition_type: str = "fade", speed: str = "med") -> None:
     t = transition_type if transition_type in {"fade", "push", "wipe", "cut", "zoom", "cover", "split"} else "fade"
@@ -48,23 +49,28 @@ def _compile_title_slide(prs: Presentation, d: dict[str, Any]) -> None:
     _finish(_make_slide(prs, 0, d), d, "fade", "fade")
 
 def _compile_content_slide(prs: Presentation, d: dict[str, Any]) -> None:
-    s = _make_slide(prs, 1, d)
-    if len(s.shapes.placeholders) > 1 and d.get("body_text"): s.shapes.placeholders[1].text = d["body_text"]
+    layout = _LE.compute_slide_layout(d); s = _make_slide(prs, 1, d); body = d.get("body_text", "")
+    if layout.columns.count > 1 and body:
+        lines = [l.strip() for l in body.split("\n") if l.strip()]; pc = max(1, -(-len(lines) // layout.columns.count))
+        for ci, cb in enumerate(layout.columns.column_boxes):
+            cl = lines[ci * pc:(ci + 1) * pc]
+            if cl: _add_text_box(s, "\n".join(cl), Inches(cb.left), Inches(cb.top), Inches(cb.width), Inches(cb.height), layout.typography.body_pt, False, COLOR_TEXT)
+    elif len(s.shapes.placeholders) > 1 and body: s.shapes.placeholders[1].text = body
     _finish(s, d, "wipe", "wipe")
 
 def _compile_chart_slide(prs: Presentation, d: dict[str, Any]) -> None:
-    s = _make_slide(prs, 5, d); cd = d.get("chart_data") or {}
+    cb = _LE.compute_slide_layout(d).content_box; s = _make_slide(prs, 5, d); cd = d.get("chart_data") or {}
     ct = CHART_MAP.get(str(cd.get("chart_type", "bar")).lower(), XL_CHART_TYPE.BAR_CLUSTERED)
     cdata = ChartData(); cdata.categories = cd.get("categories", ["Cat 1", "Cat 2"])
     for series in cd.get("series", []): cdata.add_series(series.get("name", "Series"), tuple(series.get("values", [])))
     if not cd.get("series") and cd.get("data"): cdata.add_series("Series", tuple(v for _, v in cd.get("data", [])))
-    cs = s.shapes.add_chart(ct, Inches(1.0), Inches(1.5), Inches(11.0), Inches(4.5), cdata)
+    cs = s.shapes.add_chart(ct, Inches(cb.left), Inches(cb.top), Inches(cb.width), Inches(cb.height), cdata)
     _finish(s, d, "zoom", "zoom", [cs.shape_id])
 
 def _compile_table_slide(prs: Presentation, d: dict[str, Any]) -> None:
-    s = _make_slide(prs, 5, d); td = d.get("table_data") or {}
+    cb = _LE.compute_slide_layout(d).content_box; s = _make_slide(prs, 5, d); td = d.get("table_data") or {}
     headers, rows = td.get("headers", []), td.get("rows", [])
-    ts = s.shapes.add_table(len(rows) + (1 if headers else 0), max(1, len(headers)), Inches(0.5), Inches(1.5), Inches(12.0), Inches(3.0))
+    ts = s.shapes.add_table(len(rows) + (1 if headers else 0), max(1, len(headers)), Inches(cb.left), Inches(cb.top), Inches(cb.width), Inches(cb.height))
     table = ts.table
     for ci, h in enumerate(headers): table.cell(0, ci).text = str(h)
     for ri, r in enumerate(rows, start=1 if headers else 0):
@@ -72,9 +78,13 @@ def _compile_table_slide(prs: Presentation, d: dict[str, Any]) -> None:
     _finish(s, d, "wipe", "wipe", [ts.shape_id])
 
 def _compile_kpi_slide(prs: Presentation, d: dict[str, Any]) -> None:
-    s = _make_slide(prs, 5, d); bullets = d.get("bullets") or d.get("kpi", {}).get("bullets", [])
+    layout = _LE.compute_slide_layout(d); s = _make_slide(prs, 5, d)
+    bullets = d.get("bullets") or d.get("kpi", {}).get("bullets", [])
     if len(s.shapes.placeholders) > 1 and d.get("kpi", {}).get("label"): s.shapes.placeholders[1].text = d["kpi"]["label"]
-    for i, b in enumerate(bullets, start=1): _add_text_box(s, b, Inches(1.0), Inches(1.5 + (i * 0.8)), Inches(11.0), Inches(0.6), 20, True, COLOR_TEXT)
+    ih, gap, pc = layout.extras.get("item_height_in", 0.7), layout.extras.get("row_gap_in", 0.15), max(1, -(-len(bullets) // max(1, layout.columns.count)))
+    for ci, col_box in enumerate(layout.columns.column_boxes):
+        for ri, b in enumerate(bullets[ci * pc:(ci + 1) * pc]):
+            _add_text_box(s, b, Inches(col_box.left), Inches(col_box.top + ri * (ih + gap)), Inches(col_box.width), Inches(ih), layout.typography.body_pt, True, COLOR_TEXT)
     _finish(s, d, "appear", "appear")
 
 def _compile_placeholder_slide(prs: Presentation, d: dict[str, Any], trans: str, key: str, subkey: str) -> None:
@@ -83,7 +93,15 @@ def _compile_placeholder_slide(prs: Presentation, d: dict[str, Any], trans: str,
     _finish(s, d, trans, trans)
 
 def _compile_comparison_slide(prs: Presentation, d: dict[str, Any]) -> None:
-    _compile_placeholder_slide(prs, d, "wipe", "comparison", "left_title")
+    layout = _LE.compute_slide_layout(d); s = _make_slide(prs, 5, d); cmp = d.get("comparison") or {}
+    if layout.columns.count == 2 and len(layout.columns.column_boxes) == 2:
+        lb, rb = layout.columns.column_boxes; bpt = layout.typography.body_pt
+        if cmp.get("left_title"): _add_text_box(s, cmp["left_title"], Inches(lb.left), Inches(lb.top), Inches(lb.width), Inches(0.5), bpt + 2, True, COLOR_TITLE)
+        if cmp.get("left_body"): _add_text_box(s, cmp["left_body"], Inches(lb.left), Inches(lb.top + 0.6), Inches(lb.width), Inches(lb.height - 0.6), bpt, False, COLOR_TEXT)
+        if cmp.get("right_title"): _add_text_box(s, cmp["right_title"], Inches(rb.left), Inches(rb.top), Inches(rb.width), Inches(0.5), bpt + 2, True, COLOR_HIGHLIGHT)
+        if cmp.get("right_body"): _add_text_box(s, cmp["right_body"], Inches(rb.left), Inches(rb.top + 0.6), Inches(rb.width), Inches(rb.height - 0.6), bpt, False, COLOR_TEXT)
+    elif len(s.shapes.placeholders) > 1 and cmp.get("left_title"): s.shapes.placeholders[1].text = str(cmp["left_title"])
+    _finish(s, d, "wipe", "wipe")
 
 def _compile_process_slide(prs: Presentation, d: dict[str, Any]) -> None:
     _compile_placeholder_slide(prs, d, "push", "process", "steps")

@@ -122,3 +122,15 @@ def get_slide_narration_audio(deck_id: str, slide_id: str, voice: str = Query("n
     if not slide: raise HTTPException(404, f"Slide {slide_id!r} not found in deck {deck_id!r}")
     sn = _narr.synthesize_slide(slide.id, slide.position, slide.speaker_notes, slide.title, voice, words_per_minute=words_per_minute)
     return Response(content=sn.audio_bytes, media_type="audio/wav", headers={"Content-Disposition": f'inline; filename="slide_{slide.position}_narration.wav"'})
+@router.get("/{deck_id}/layout")
+def get_deck_layout(deck_id: str, db: Session = Depends(get_db), user: dict = Depends(require_role(Role.VIEWER))) -> dict:
+    """Return computed smart layout specifications for all slides in a deck.
+
+    Each slide entry includes density_class, typography (title_pt, body_pt),
+    content_box (left/top/width/height in inches), and columns (count + per-column boxes).
+    The response is deterministic from slide content and requires no LLM or network call.
+    """
+    from backend.app.services.layout_engine import SlideLayoutEngine
+    deck = _get_deck(db, deck_id)
+    slides = _deck_slides(deck)
+    return SlideLayoutEngine().layout_summary(slides)

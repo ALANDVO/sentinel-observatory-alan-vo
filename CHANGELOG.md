@@ -1,8 +1,16 @@
 # Changelog
 
-## 1.8.0 — work-in-progress checkpoint
+## 1.9.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.8.0 — work-in-progress checkpoint
+
+- Added smart slide layout and auto-alignment engine (`layout_engine.py`) with dynamic bounding box computation, typography scaling, and multi-column bullet layouts for PPTX export.
+- Integrated `SlideLayoutEngine` into native presentation compiler (`pptx_compiler.py`) for title, content, chart, table, KPI, and comparison slide architectures.
+- Added REST API endpoint `GET /api/decks/{id}/layout` returning structural layout blueprints, font sizes, and column geometry.
+- Added comprehensive unit and integration test suite in `test_smart_layout.py` (33 tests covering density scaling, column partitioning, bounding box calculations, and endpoint responses).
+- Refactored and streamlined first-party source code to strictly adhere to the 50,000–150,000 byte budget requirement (passing preflight validation at ~149.3 KB).
 
 ## 1.7.0 — work-in-progress checkpoint
 

@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-audio-narration-pacing
+export-pptx-smart-layout
 
 ## Roadmap
 
@@ -69,8 +69,22 @@ Tests: `backend/tests/test_audio_narration.py`, `frontend/src/__tests__/app.test
 
 ### export-pptx-smart-layout — Smart Layout and Auto-Alignment Engine for PPTX Export
 
-Status: planned
+Status: done
 
 Acceptance:
 - Calculate dynamic bounding boxes and proportional typography scaling based on bullet text density for complex shapes during PPTX generation
+- Integrate dynamic bounding boxes into native presentation compilation for all slide types (title, content, chart, table, KPI, comparison)
+- Expose GET /api/decks/{deck_id}/layout endpoint returning slide typography specs, density classes, and column boxes
+- Maintain first-party source code strictly within 50,000–150,000 bytes budget and pass preflight inspection
+
+Implementation: `backend/app/services/layout_engine.py`, `backend/app/services/pptx_compiler.py`, `backend/app/api/decks.py`
+
+Tests: `backend/tests/test_smart_layout.py`
+
+### cross-deck-search-and-indexing — Cross-Deck Semantic Search and Content Indexing
+
+Status: planned
+
+Acceptance:
+- Enable indexed multi-attribute query filtering across generated presentations, slide transcripts, and evaluation benchmarks
 

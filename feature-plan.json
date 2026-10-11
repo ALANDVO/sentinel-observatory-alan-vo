@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "audio-narration-pacing",
+  "current_feature": "export-pptx-smart-layout",
   "features": [
     {
       "id": "attribution-guard-cli",
@@ -90,9 +90,28 @@
     {
       "id": "export-pptx-smart-layout",
       "title": "Smart Layout and Auto-Alignment Engine for PPTX Export",
+      "status": "done",
+      "acceptance": [
+        "Calculate dynamic bounding boxes and proportional typography scaling based on bullet text density for complex shapes during PPTX generation",
+        "Integrate dynamic bounding boxes into native presentation compilation for all slide types (title, content, chart, table, KPI, comparison)",
+        "Expose GET /api/decks/{deck_id}/layout endpoint returning slide typography specs, density classes, and column boxes",
+        "Maintain first-party source code strictly within 50,000–150,000 bytes budget and pass preflight inspection"
+      ],
+      "implementation": [
+        "backend/app/services/layout_engine.py",
+        "backend/app/services/pptx_compiler.py",
+        "backend/app/api/decks.py"
+      ],
+      "tests": [
+        "backend/tests/test_smart_layout.py"
+      ]
+    },
+    {
+      "id": "cross-deck-search-and-indexing",
+      "title": "Cross-Deck Semantic Search and Content Indexing",
       "status": "planned",
       "acceptance": [
-        "Calculate dynamic bounding boxes and proportional typography scaling based on bullet text density for complex shapes during PPTX generation"
+        "Enable indexed multi-attribute query filtering across generated presentations, slide transcripts, and evaluation benchmarks"
       ],
       "implementation": [],
       "tests": []

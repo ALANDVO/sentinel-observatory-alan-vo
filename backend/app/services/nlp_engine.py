@@ -26,10 +26,9 @@ def extract_keywords(text: str, top_k: int = 15) -> list[str]:
         if tok not in _STOP_WORDS and len(tok) > 3: freq[tok] = freq.get(tok, 0) + 1
     return [t for t, _ in sorted(freq.items(), key=lambda x: -x[1])[:top_k]]
 
-def _count_syllables(word: str) -> int:
-    w = word.lower().strip(".,;:!?\"'")
-    v = re.findall(r"[aeiou]", w)
-    if w.endswith("e") and len(w) > 2: v = v[:-1]
+def _count_syllables(w: str) -> int:
+    v = re.findall(r"[aeiou]", w.lower().strip(".,;:!?\"'"))
+    if w.lower().endswith("e") and len(w) > 2: v = v[:-1]
     return max(1, len(v))
 
 def flesch_kincaid_grade(text: str) -> float:
@@ -38,15 +37,15 @@ def flesch_kincaid_grade(text: str) -> float:
     if not sentences or not words: return 0.0
     return round(max(0.0, 0.39 * (len(words) / len(sentences)) + 11.8 * (sum(_count_syllables(w) for w in words) / len(words)) - 15.59), 2)
 
-_KPI_PATTERNS = [re.compile(r"\b\d+[\.,]?\d*\s*(?:%|percent|x|times|billion|million|k|ms|s|fps|gb|mb)\b", re.I), re.compile(r"\b(?:metric|kpi|roi|cagr|conversion|retention|churn|latency|throughput)\b", re.I)]
-_CHART_PATTERNS = [re.compile(r"\b(?:chart|graph|trend|over time|growth|distribution|percentage)\b", re.I)]
-_TABLE_PATTERNS = [re.compile(r"\b(?:compare|comparison|versus|vs\.?|table|matrix|rows|columns)\b", re.I)]
-_PROCESS_PATTERNS = [re.compile(r"\b(?:step\s*\d+|phase\s*\d+|stage|pipeline|workflow|process|flow)\b", re.I)]
+_KPI_PATS = [re.compile(r"\b\d+[\.,]?\d*\s*(?:%|percent|x|times|billion|million|k|ms|s|fps|gb|mb)\b", re.I), re.compile(r"\b(?:metric|kpi|roi|cagr|conversion|retention|churn|latency|throughput)\b", re.I)]
+_CHART_PATS = [re.compile(r"\b(?:chart|graph|trend|over time|growth|distribution|percentage)\b", re.I)]
+_TABLE_PATS = [re.compile(r"\b(?:compare|comparison|versus|vs\.?|table|matrix|rows|columns)\b", re.I)]
+_PROC_PATS = [re.compile(r"\b(?:step\s*\d+|phase\s*\d+|stage|pipeline|workflow|process|flow)\b", re.I)]
 
 def detect_slide_type(title: str, body: str) -> SlideType:
     comb = f"{title} {body}"
-    kpis, charts = sum(1 for p in _KPI_PATTERNS if p.search(comb)), sum(1 for p in _CHART_PATTERNS if p.search(comb))
-    tables, proc = sum(1 for p in _TABLE_PATTERNS if p.search(comb)), sum(1 for p in _PROCESS_PATTERNS if p.search(comb))
+    kpis, charts = sum(1 for p in _KPI_PATS if p.search(comb)), sum(1 for p in _CHART_PATS if p.search(comb))
+    tables, proc = sum(1 for p in _TABLE_PATS if p.search(comb)), sum(1 for p in _PROC_PATS if p.search(comb))
     if kpis >= 2: return "kpi"
     if charts >= 1 and kpis >= 1: return "chart"
     if tables >= 1: return "comparison"
@@ -58,7 +57,7 @@ def _split_into_sections(text: str) -> list[tuple[str, str]]:
     if not matches: return [(p.split(".")[0][:80], p) for p in [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]]
     sections = []
     for i, m in enumerate(matches):
-        heading = m.group(1).strip() if m.group(1).strip() else m.group(0).strip("# ").strip()
+        heading = (m.group(1).strip() or m.group(0).strip("# ")).strip()
         end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
         if heading: sections.append((heading[:120], text[m.end():end].strip()))
     return sections
@@ -84,11 +83,7 @@ def _make_sample_table_data(columns: list[str], rows_count: int = 4) -> dict:
     criteria, ratings = ["Performance", "Cost", "Scalability", "Reliability"], ["High", "Medium", "Low", "Very High", "Excellent"]
     rows = []
     for i in range(min(rows_count, len(criteria))):
-        row = [criteria[i]]
-        for j in range(len(headers) - 1):
-            h = int(hashlib.md5(f"{criteria[i]}:{headers[j+1]}".encode()).hexdigest(), 16)
-            row.append(ratings[h % len(ratings)])
-        rows.append(row)
+        rows.append([criteria[i]] + [ratings[int(hashlib.md5(f"{criteria[i]}:{h}".encode()).hexdigest(), 16) % len(ratings)] for h in headers[1:]])
     return {"headers": headers, "rows": rows}
 
 class NLPEngine:

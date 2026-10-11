@@ -59,9 +59,11 @@ def test_audit_log_timestamp_is_utc(db, audit_svc: AuditService):
     assert entry.created_at is not None
     # Timestamps should be timezone-aware or naive but consistent (SQLite returns naive UTC)
     ts = entry.created_at
-    # Ensure the timestamp is recent (within last 60 seconds)
     from datetime import datetime
-    now = datetime.utcnow()
+    from datetime import timezone
+    now = datetime.now(timezone.utc)
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
     diff = abs((now - ts).total_seconds())
     assert diff < 60, f"Audit timestamp is not recent: {ts}"
 

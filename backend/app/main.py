@@ -22,13 +22,30 @@ def create_app() -> FastAPI:
     """
     settings.validate_production_guards()
 
+    # Startup lifespan: create DB tables and seed templates
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def lifespan(_a: FastAPI):
+        from backend.app.core.database import init_db, SessionLocal
+        from backend.app.services.template_service import TemplateService
+
+        logger.info("Initializing database…")
+        init_db()
+
+        with SessionLocal() as db:
+            TemplateService().seed_builtin_templates(db)
+        logger.info("Startup complete.")
+        yield
+
     app = FastAPI(
         title="Sentinel Observatory",
         description=(
             "AI presentation generation and slide-intelligence observatory. "
             "Evaluates cognitive load, data grounding, and compiles native PowerPoint decks."
         ),
-        version="1.0.0",
+        version=settings.app_version,
+        lifespan=lifespan,
     )
 
     # CORS – allow configured frontend origins
@@ -39,19 +56,6 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    # Startup: create DB tables and seed templates
-    @app.on_event("startup")
-    def _on_startup() -> None:
-        from backend.app.core.database import init_db, SessionLocal
-        from backend.app.services.template_service import TemplateService
-
-        logger.info("Initializing database…")
-        init_db()
-
-        with SessionLocal() as db:
-            TemplateService().seed_builtin_templates(db)
-        logger.info("Startup complete.")
 
     app.include_router(api_router)
     return app

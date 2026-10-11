@@ -166,3 +166,14 @@ def test_real_http_boundary_core_workflow(client):
     assert export_resp.headers["content-type"] == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
     # PPTX files start with PK zip header
     assert export_resp.content.startswith(b"PK")
+
+
+def test_health_endpoint_returns_dynamic_version(client):
+    """Health check endpoint must expose current product version metadata."""
+    resp = client.get("/api/health")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "ok"
+    assert data["service"] == "sentinel-observatory"
+    assert "version" in data
+    assert len(data["version"]) >= 5

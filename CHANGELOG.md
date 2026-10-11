@@ -1,8 +1,16 @@
 # Changelog
 
-## 1.3.0 — work-in-progress checkpoint
+## 1.4.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.3.0 — work-in-progress checkpoint
+
+- Dynamically bound FastAPI application version and `/api/health` status response to canonical project version metadata read from `VERSION`.
+- Replaced deprecated `@app.on_event("startup")` handler with modern async `lifespan` context manager in `main.py`.
+- Modernized timestamp comparisons in `test_persistence_audit.py` to use timezone-aware UTC objects, eliminating Python 3.12 deprecation warnings.
+- Added test coverage in `test_auth_and_integration.py` for dynamic health endpoint versioning.
+- Maintained first-party source code strictly within the 50,000–150,000 bytes budget.
 
 ## 1.2.0 — work-in-progress checkpoint
 

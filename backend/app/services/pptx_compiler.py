@@ -76,8 +76,9 @@ def _compile_title_slide(prs: Presentation, slide_data: dict[str, Any]) -> None:
 def _body_text_lines(slide, slide_data: dict[str, Any]) -> None:
     body = slide.shapes.placeholders[1] if len(slide.shapes.placeholders) > 1 else None
     if body:
-        for run in body.text_frame.runs:
-            run.font.color.rgb = COLOR_TEXT
+        for paragraph in body.text_frame.paragraphs:
+            for run in paragraph.runs:
+                run.font.color.rgb = COLOR_TEXT
     else:
         slide.shapes.add_textbox(Inches(0.5), Inches(3.0), Inches(12.0), Inches(1.0)).text_frame.text = slide_data.get("title", "")
 
@@ -98,21 +99,34 @@ def _compile_chart_slide(prs: Presentation, slide_data: dict[str, Any]) -> None:
     chart_data.categories = cd.get("categories", [])
     chart_data.categories_title = cd.get("categories_title", "")
     cs = slide.shapes.add_chart(ct, Inches(1.0), Inches(1.5), Inches(11.0), Inches(4.5), chart_data)
+    _apply_slide_transition(slide, "zoom")
     _apply_slide_animations(slide, [cs.shape_id], effect="zoom")
-
 def _compile_table_slide(prs: Presentation, slide_data: dict[str, Any]) -> None:
     slide = _make_slide(prs, 5, slide_data)
     td = slide_data.get("table_data", {}) or {}
-    ts = slide.shapes.add_table(1, len(td.get("headers", [])), Inches(0.5), Inches(1.5), Inches(12.0), Inches(3.0), td.get("data", []))
+    headers = td.get("headers", [])
+    rows_data = td.get("rows", []) or []
+    num_cols = len(headers) if headers else 1
+    num_rows = len(rows_data) + (1 if headers else 0)
+    ts = slide.shapes.add_table(num_cols, num_rows, Inches(0.5), Inches(1.5), Inches(12.0), Inches(3.0))
+    table = ts.table
+    for ci, header in enumerate(headers):
+        table.cell(0, ci).text = header
+    for ri, row in enumerate(rows_data, start=1):
+        for ci, val in enumerate(row):
+            table.cell(ri, ci).text = str(val) if val is not None else ""
     _apply_slide_animations(slide, [ts.shape_id], effect="wipe")
 
 def _compile_kpi_slide(prs: Presentation, slide_data: dict[str, Any]) -> None:
     slide = _make_slide(prs, 5, slide_data)
-    kpi = slide_data.get("kpi", {}) or {}
+    bullets = slide_data.get("bullets", []) or slide_data.get("kpi", {}).get("bullets", [])
     title = slide.shapes.title
     body = slide.shapes.placeholders[1] if len(slide.shapes.placeholders) > 1 else None
     if body:
-        body.text = kpi.get("label", "")
+        body.text = slide_data.get("kpi", {}).get("label", "")
+    for i, bullet in enumerate(bullets, start=1):
+        bx = _add_text_box(slide, bullet, Inches(1.0), Inches(3.0), Inches(12.0), Inches(1.0), font_size=24, bold=True, color=COLOR_TEXT, align=PP_ALIGN.LEFT)
+    _apply_slide_transition(slide, "appear")
     _apply_slide_animations(slide, effect="appear")
 
 def _compile_comparison_slide(prs: Presentation, slide_data: dict[str, Any]) -> None:

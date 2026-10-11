@@ -1,0 +1,95 @@
+import React, { useState } from 'react';
+
+interface QuickstartModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectPreset: (topic: string, slideCount: number) => void;
+}
+
+export const PRESETS = [
+  {
+    id: 'ai-eval',
+    title: 'AI Safety & Alignment Evaluation',
+    topic: 'Evaluating Frontier LLM Alignment and Safety Guardrails with Automated Cognitive Metrics and Attribution Audits',
+    slides: 8,
+    category: 'AI Research',
+    desc: '8-slide deck with KPI highlights, cognitive load scores, and safety benchmarks.',
+  },
+  {
+    id: 'exec-strategy',
+    title: 'Executive AI Strategy & Roadmap',
+    topic: 'Enterprise AI Strategy 2026: Agentic Infrastructure, ROI Projections, and Deployment Timelines',
+    slides: 6,
+    category: 'Executive Brief',
+    desc: '6-slide executive brief with market metrics, timeline comparisons, and speaker notes.',
+  },
+  {
+    id: 'ml-benchmarks',
+    title: 'ML System Performance & Benchmarks',
+    topic: 'Distributed Deep Learning Inference: Latency, Throughput, and Cost Benchmarks Across Model Architectures',
+    slides: 10,
+    category: 'Engineering',
+    desc: '10-slide deck with chart comparisons, tabular benchmark data, and speaker notes.',
+  },
+];
+
+export const QuickstartModal: React.FC<QuickstartModalProps> = ({ isOpen, onClose, onSelectPreset }) => {
+  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" data-testid="quickstart-modal" onClick={onClose}>
+      <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>🚀 Quickstart Onboarding & Presets</h3>
+          <button className="btn-close" onClick={onClose}>&times;</button>
+        </div>
+        <div className="tab-pills" style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '.5rem' }}>
+          <button className={`btn-link ${activeStep === 1 ? 'font-bold' : ''}`} onClick={() => setActiveStep(1)}>1. Presets</button>
+          <button className={`btn-link ${activeStep === 2 ? 'font-bold' : ''}`} onClick={() => setActiveStep(2)}>2. Workflows</button>
+          <button className={`btn-link ${activeStep === 3 ? 'font-bold' : ''}`} onClick={() => setActiveStep(3)}>3. Docs</button>
+        </div>
+        {activeStep === 1 && (
+          <div>
+            <p style={{ fontSize: '.85rem', color: 'var(--muted)', marginBottom: '.75rem' }}>Select a preset to generate a deck with native layouts and audio narration:</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
+              {PRESETS.map((p) => (
+                <div key={p.id} className="card" style={{ cursor: 'pointer' }} onClick={() => { onSelectPreset(p.topic, p.slides); onClose(); }}>
+                  <div className="card-top">
+                    <h4>{p.title}</h4>
+                    <span className="tag">{p.category}</span>
+                  </div>
+                  <p style={{ margin: '.25rem 0 0', fontSize: '.8rem', color: 'var(--muted)' }}>{p.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {activeStep === 2 && (
+          <div style={{ fontSize: '.85rem', lineHeight: '1.5' }}>
+            <h4>Capabilities</h4>
+            <ul style={{ paddingLeft: '1.25rem', marginTop: '.35rem' }}>
+              <li><strong>Native PPTX Deck Generation:</strong> Real shapes, tables, charts, transitions, animations.</li>
+              <li><strong>Slide Observatory:</strong> Cognitive load, brevity, data fidelity, MECE scores.</li>
+              <li><strong>Audio Narration:</strong> Speech audio WAV tracks from speaker notes.</li>
+              <li><strong>Template Studio:</strong> Custom .pptx template layout and theme support.</li>
+            </ul>
+          </div>
+        )}
+        {activeStep === 3 && (
+          <div style={{ fontSize: '.85rem', lineHeight: '1.5' }}>
+            <h4>Documentation Hub (Issue #225)</h4>
+            <ul style={{ paddingLeft: '1.25rem', marginTop: '.35rem' }}>
+              <li><code>docs/quickstart.md</code>: Guided local setup, API reference, and tutorial.</li>
+              <li><code>docs/zh/quickstart.md</code>: 中文快速上手指南与完整文档。</li>
+              <li><code>README.md</code>: Architecture diagram and Keycloak OIDC guide.</li>
+            </ul>
+          </div>
+        )}
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+};

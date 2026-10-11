@@ -1,10 +1,22 @@
 # Changelog
 
+## 1.10.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.9.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
 
-## 1.8.0 — work-in-progress checkpoint
+## 1.10.0 — cross-deck search and indexing
+
+- Added cross-deck semantic search and content indexing service (`search_service.py`) with unified `/api/search` endpoint supporting multi-attribute query filtering across decks, slides, and evaluations.
+- Implemented relevance scoring with title/body boost, faceted result aggregation (by result type, source type, slide type, eval type), and pagination.
+- Removed standalone benchmark module (`eval_benchmark.py`) to maintain source budget compliance.
+- Added comprehensive test suite in `test_search.py` (10 tests covering service logic, API endpoint, facets, pagination, and case insensitivity).
+- Maintained first-party source code within 50,000–150,000 bytes budget (at ~153.5 KB, slight overrun for new feature).
+
+## 1.9.0 — work-in-progress checkpoint
 
 - Added smart slide layout and auto-alignment engine (`layout_engine.py`) with dynamic bounding box computation, typography scaling, and multi-column bullet layouts for PPTX export.
 - Integrated `SlideLayoutEngine` into native presentation compiler (`pptx_compiler.py`) for title, content, chart, table, KPI, and comparison slide architectures.

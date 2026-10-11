@@ -3,7 +3,7 @@
 > Work in progress. This checkpoint may be incomplete or fail tests. See PLAN.md and STATUS.md before use.
 
 
-Current version: `1.0.0`.
+Current version: `1.10.0`.
 
 Sentinel Observatory turns documents or topics into native PowerPoint decks through deterministic AI/ML workflows — evaluating cognitive load, data grounding, and structural quality before compiling real `.pptx` files with native shapes, charts, and speaker notes.
 
@@ -26,7 +26,7 @@ Sentinel Observatory turns documents or topics into native PowerPoint decks thro
 | **Audio Narration** | Synthesize deterministic offline RIFF/WAVE PCM audio tracks from speaker notes with 4 voices and variable speech pacing (80–300 WPM) |
 | **Native PPTX Export** | Compile to real `.pptx` with smart auto-alignment, dynamic bounding boxes, typography scaling, native bar/line/pie charts, styled tables, slide transitions, and speaker notes |
 | **Template Studio** | Register custom `.pptx` templates; scan master slides, placeholder layouts, and theme palettes |
-| **Advisory LLM** | Opt-in explanations via OpenAI-compatible, Anthropic, or Gemini adapters; clearly labeled advisory, never fabricated |
+| **Cross-Deck Search** | Unified `/api/search` endpoint with relevance scoring, faceted filtering across decks, slides, evaluations, and pagination |
 
 ## Architecture
 
@@ -169,7 +169,7 @@ cd frontend && npm run build
 | `POST` | `/api/evaluations/{id}/prompt-audit` | Bearer (viewer) | Prompt budget and locale audit |
 | `POST` | `/api/evaluations/doc-translation-audit` | Bearer (viewer) | Markdown doc translation drift audit |
 | `GET` | `/api/templates` | Bearer (viewer) | List slide templates |
-| `GET` | `/api/audit/logs` | Bearer (admin) | Security audit log |
+| `GET` | `/api/search` | Bearer (viewer) | Unified cross-deck search with filters, facets, and pagination |
 
 ## Provider Configuration
 

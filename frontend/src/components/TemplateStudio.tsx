@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import { TemplateOut } from '../types';
 
 interface TemplateStudioProps {
-  templates: TemplateOut[];
-  loading: boolean;
-  error: string | null;
+  templates: TemplateOut[]; loading: boolean; error: string | null;
   onUploadTemplate: (name: string, description: string, file: File | null) => Promise<void>;
 }
 
@@ -17,21 +15,14 @@ export const TemplateStudio: React.FC<TemplateStudioProps> = ({ templates, loadi
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setUploading(true);
-    setUploadError(null);
+    e.preventDefault(); if (!name.trim()) return;
+    setUploading(true); setUploadError(null);
     try {
       await onUploadTemplate(name, desc, file);
-      setShowModal(false);
-      setName('');
-      setDesc('');
-      setFile(null);
+      setShowModal(false); setName(''); setDesc(''); setFile(null);
     } catch (err: unknown) {
       setUploadError(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
-      setUploading(false);
-    }
+    } finally { setUploading(false); }
   };
 
   return (
@@ -43,7 +34,6 @@ export const TemplateStudio: React.FC<TemplateStudioProps> = ({ templates, loadi
         </div>
         <button className="btn-primary" onClick={() => setShowModal(true)}>+ Import .pptx Template</button>
       </div>
-
       {error && <div className="alert alert-error">{error}</div>}
       {loading ? (
         <div className="state-panel"><div className="spinner" /><p>Loading templates…</p></div>
@@ -66,7 +56,6 @@ export const TemplateStudio: React.FC<TemplateStudioProps> = ({ templates, loadi
           ))}
         </div>
       )}
-
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
@@ -74,8 +63,8 @@ export const TemplateStudio: React.FC<TemplateStudioProps> = ({ templates, loadi
               <h3>Import .pptx Template</h3>
               <button className="btn-close" onClick={() => setShowModal(false)}>&times;</button>
             </div>
+            {uploadError && <div className="alert alert-error">{uploadError}</div>}
             <form onSubmit={handleSubmit}>
-              {uploadError && <div className="alert alert-error">{uploadError}</div>}
               <div className="form-group">
                 <label>Template Name</label>
                 <input type="text" className="form-control" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -85,12 +74,12 @@ export const TemplateStudio: React.FC<TemplateStudioProps> = ({ templates, loadi
                 <input type="text" className="form-control" value={desc} onChange={(e) => setDesc(e.target.value)} />
               </div>
               <div className="form-group">
-                <label>File (.pptx)</label>
-                <input type="file" accept=".pptx" className="form-control" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                <label>.pptx Template File</label>
+                <input type="file" accept=".pptx" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} />
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary" disabled={uploading}>{uploading ? 'Importing…' : 'Save Template'}</button>
+                <button type="submit" className="btn-primary" disabled={uploading}>{uploading ? 'Importing…' : 'Import Template'}</button>
               </div>
             </form>
           </div>

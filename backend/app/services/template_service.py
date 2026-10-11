@@ -1,93 +1,60 @@
 """Template service: PPTX template registry, layout scanning, placeholder mapping."""
 from __future__ import annotations
-
-import io
-import os
+import io, os
 from pathlib import Path
 from sqlalchemy.orm import Session
 from backend.app.models.template import Template
-
 
 class TemplateService:
     TEMPLATES_DIR = os.getenv("TEMPLATES_DIR", "./data/templates")
 
     def create_template(self, db: Session, name: str, description: str | None, author_sub: str | None, pptx_bytes: bytes | None = None) -> Template:
-        layout_names: list[str] = []
-        placeholder_map: dict[str, list] = {}
-        slide_count = 0
-        filename: str | None = None
-        theme_color: str | None = None
-
+        layout_names, placeholder_map, slide_count, filename, theme_color = [], {}, 0, None, None
         if pptx_bytes:
             layout_names, placeholder_map, slide_count, theme_color, filename = self._scan_pptx(name, pptx_bytes)
-
-        template = Template(
-            name=name,
-            description=description or "",
-            author_sub=author_sub,
-            filename=filename,
-            theme_color=theme_color,
-            slide_count=slide_count,
-            layout_names=layout_names,
-            placeholder_map=placeholder_map,
-            is_builtin="false",
-        )
-        db.add(template)
-        db.commit()
-        db.refresh(template)
-        return template
+        t = Template(name=name, description=description or "", author_sub=author_sub, filename=filename,
+                     theme_color=theme_color, slide_count=slide_count, layout_names=layout_names,
+                     placeholder_map=placeholder_map, is_builtin="false")
+        db.add(t); db.commit(); db.refresh(t)
+        return t
 
     def _scan_pptx(self, name: str, pptx_bytes: bytes) -> tuple[list[str], dict[str, list], int, str | None, str | None]:
         try:
             from pptx import Presentation
             prs = Presentation(io.BytesIO(pptx_bytes))
-            layout_names = [layout.name for layout in prs.slide_layouts]
-            placeholder_map: dict[str, list] = {}
-            for layout in prs.slide_layouts:
-                placeholder_map[layout.name] = [{"idx": ph.placeholder_format.idx, "type": str(ph.placeholder_format.type), "name": ph.name} for ph in layout.placeholders]
-
-            slide_count = len(prs.slides)
-            theme_color = None
+            layout_names = [l.name for l in prs.slide_layouts]
+            placeholder_map = {l.name: [{"idx": ph.placeholder_format.idx, "type": str(ph.placeholder_format.type), "name": ph.name} for ph in l.placeholders] for l in prs.slide_layouts}
             safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in name)
             os.makedirs(self.TEMPLATES_DIR, exist_ok=True)
             filename = f"{safe_name}.pptx"
-            with open(Path(self.TEMPLATES_DIR) / filename, "wb") as f:
-                f.write(pptx_bytes)
-
-            return layout_names, placeholder_map, slide_count, theme_color, filename
+            with open(Path(self.TEMPLATES_DIR) / filename, "wb") as f: f.write(pptx_bytes)
+            return layout_names, placeholder_map, len(prs.slides), None, filename
         except Exception as exc:
             raise ValueError(f"Failed to parse PPTX template: {exc}") from exc
 
     def list_templates(self, db: Session, skip: int = 0, limit: int = 50) -> tuple[list[Template], int]:
-        total = db.query(Template).count()
-        return db.query(Template).offset(skip).limit(limit).all(), total
+        return db.query(Template).offset(skip).limit(limit).all(), db.query(Template).count()
 
     def get_template(self, db: Session, template_id: str) -> Template | None:
         return db.query(Template).filter(Template.id == template_id).first()
 
     def get_template_filepath(self, template: Template) -> Path | None:
-        if not template or not template.filename:
-            return None
+        if not template or not template.filename: return None
         p = Path(self.TEMPLATES_DIR) / template.filename
         return p if p.is_file() else None
 
     def delete_template(self, db: Session, template_id: str) -> bool:
-        template = self.get_template(db, template_id)
-        if not template:
-            return False
-        if template.filename:
-            Path(self.TEMPLATES_DIR, template.filename).unlink(missing_ok=True)
-        db.delete(template)
-        db.commit()
+        if not (t := self.get_template(db, template_id)): return False
+        if t.filename: Path(self.TEMPLATES_DIR, t.filename).unlink(missing_ok=True)
+        db.delete(t); db.commit()
         return True
 
     def seed_builtin_templates(self, db: Session) -> None:
-        if db.query(Template).filter(Template.is_builtin == "true").count() > 0:
-            return
+        if db.query(Template).filter(Template.is_builtin == "true").count() > 0: return
         builtins = [
-            {"name": "Executive Brief", "description": "Minimal template for executive decks.", "theme_color": "#1A1A2E", "layout_names": ["Title Slide", "Content", "Chart", "Table"]},
-            {"name": "Research Report", "description": "Academic template for research findings.", "theme_color": "#0F3C78", "layout_names": ["Title Slide", "Section Header", "Comparison"]},
-            {"name": "Data Dashboard", "description": "Data-dense template with KPI focus.", "theme_color": "#162136", "layout_names": ["Title Slide", "KPI Overview", "Chart", "Table"]},
+            {"name": "Executive Brief", "description": "Minimal executive deck.", "theme_color": "#1A1A2E", "layout_names": ["Title Slide", "Content", "Chart", "Table"]},
+            {"name": "Research Report", "description": "Academic research findings.", "theme_color": "#0F3C78", "layout_names": ["Title Slide", "Section Header", "Comparison"]},
+            {"name": "Data Dashboard", "description": "Data-dense KPI template.", "theme_color": "#162136", "layout_names": ["Title Slide", "KPI Overview", "Chart", "Table"]},
         ]
         for t in builtins:
             db.add(Template(name=t["name"], description=t["description"], theme_color=t["theme_color"], layout_names=t["layout_names"], placeholder_map={}, is_builtin="true"))

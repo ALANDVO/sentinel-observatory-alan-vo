@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-attribution-guard-cli
+i18n-dictionary-completeness
 
 ## Roadmap
 
@@ -32,8 +32,12 @@ Tests: `backend/tests/test_pptx_compiler.py`, `backend/tests/test_deck_generatio
 
 ### i18n-dictionary-completeness — Extended Multilingual Prompt and UI Dictionary Verification (#302, #303)
 
-Status: planned
+Status: done
 
 Acceptance:
-- Validate additional language mappings and synchronizations across locale bundles
+- Validate additional language mappings and synchronizations across locale bundles, checking placeholder parity, unused keys, empty values, markdown structural drift, and prompt template trigger pollution
+
+Implementation: `backend/app/services/prompt_audit.py`, `backend/app/api/evaluations.py`
+
+Tests: `backend/tests/test_prompt_audit.py`
 

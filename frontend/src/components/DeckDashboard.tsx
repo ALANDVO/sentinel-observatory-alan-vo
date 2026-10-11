@@ -2,17 +2,12 @@ import React, { useState } from 'react';
 import { DeckSummary } from '../types';
 
 interface DeckDashboardProps {
-  decks: DeckSummary[];
-  loading: boolean;
-  error: string | null;
-  onSelectDeck: (id: string) => void;
-  onDeleteDeck: (id: string) => void;
+  decks: DeckSummary[]; loading: boolean; error: string | null;
+  onSelectDeck: (id: string) => void; onDeleteDeck: (id: string) => void;
   onCreateTopic: (topic: string, count: number) => Promise<void>;
   onCreateDoc: (text: string, count: number) => Promise<void>;
-  filterSource: string;
-  setFilterSource: (src: string) => void;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
+  filterSource: string; setFilterSource: (src: string) => void;
+  searchQuery: string; setSearchQuery: (query: string) => void;
 }
 
 export const DeckDashboard: React.FC<DeckDashboardProps> = ({
@@ -28,18 +23,14 @@ export const DeckDashboard: React.FC<DeckDashboardProps> = ({
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setSubmitError(null);
+    e.preventDefault(); setSubmitting(true); setSubmitError(null);
     try {
       if (createMode === 'topic') {
         if (!topicInput.trim()) throw new Error('Topic is required');
-        await onCreateTopic(topicInput, slideCount);
-        setTopicInput('');
+        await onCreateTopic(topicInput, slideCount); setTopicInput('');
       } else {
         if (!docInput.trim()) throw new Error('Document text is required');
-        await onCreateDoc(docInput, slideCount);
-        setDocInput('');
+        await onCreateDoc(docInput, slideCount); setDocInput('');
       }
       setShowModal(false);
     } catch (err: unknown) {
@@ -112,7 +103,7 @@ export const DeckDashboard: React.FC<DeckDashboardProps> = ({
               {createMode === 'topic' ? (
                 <div className="form-group">
                   <label>Topic / Prompt</label>
-                  <textarea className="form-control" rows={3} placeholder="e.g. Distributed Consensus in Modern Storage Systems" value={topicInput} onChange={(e) => setTopicInput(e.target.value)} required />
+                  <textarea className="form-control" rows={3} placeholder="e.g. Distributed Consensus" value={topicInput} onChange={(e) => setTopicInput(e.target.value)} required />
                 </div>
               ) : (
                 <div className="form-group">

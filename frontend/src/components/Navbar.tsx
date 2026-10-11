@@ -1,6 +1,5 @@
 import React from 'react';
 import { UserInfo } from '../types';
-
 interface NavbarProps {
   user: UserInfo | null;
   activeTab: 'decks' | 'observatory' | 'templates';
@@ -8,7 +7,6 @@ interface NavbarProps {
   onLogout: () => void;
   onOpenQuickstart?: () => void;
 }
-
 export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, onSelectTab, onLogout, onOpenQuickstart }) => (
   <header className="navbar">
     <div className="navbar-brand">

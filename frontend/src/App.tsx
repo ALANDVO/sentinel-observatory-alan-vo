@@ -7,7 +7,6 @@ import { DeckDetail } from './components/DeckDetail';
 import { ObservatoryView } from './components/ObservatoryView';
 import { TemplateStudio } from './components/TemplateStudio';
 import { QuickstartModal } from './components/QuickstartModal';
-
 export const App: React.FC = () => {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [tab, setTab] = useState<'decks' | 'observatory' | 'templates'>('decks');
@@ -24,16 +23,13 @@ export const App: React.FC = () => {
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [templatesErr, setTemplatesErr] = useState<string | null>(null);
   const [quickstart, setQuickstart] = useState(false);
-
   const loadDecks = () => { setDecksLoading(true); api.decks.list({ limit: 50 }).then((r) => setDecks(r.items)).catch((e) => setDecksErr(String(e))).finally(() => setDecksLoading(false)); };
   const loadTemplates = () => { setTemplatesLoading(true); api.templates.list().then((r) => setTemplates(r.items)).catch((e) => setTemplatesErr(String(e))).finally(() => setTemplatesLoading(false)); };
   const loadEvals = () => { setEvalsLoading(true); api.evaluations.list({ limit: 100 }).then((r) => setEvals(r.items)).catch(() => {}).finally(() => setEvalsLoading(false)); };
-
   useEffect(() => {
     api.auth.getMe().then(setUser).catch(() => {});
     loadDecks(); loadTemplates(); loadEvals();
   }, []);
-
   return (
     <div className="app-root">
       <Navbar user={user} activeTab={tab} onSelectTab={(t) => { setTab(t); setDeck(null); }} onLogout={() => { setAccessToken(null); setUser(null); window.location.reload(); }} onOpenQuickstart={() => setQuickstart(true)} />

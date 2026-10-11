@@ -2,20 +2,16 @@ import {
   DeckListResponse, DeckOut, DeckNarrationOut, EvaluationListResponse, EvaluationOut,
   OIDCConfig, SlideOut, SlideSearchResponse, TemplateListResponse, TemplateOut, UserInfo,
 } from './types';
-
 let _token: string | null = null;
 export const setAccessToken = (t: string | null) => { _token = t; };
 export const getAccessToken = () => _token;
-
 export const storePKCEState = (s: string, v: string) => { sessionStorage.setItem('sentinel_pkce_state', s); sessionStorage.setItem('sentinel_pkce_verifier', v); };
 export const retrievePKCEState = () => {
   const s = sessionStorage.getItem('sentinel_pkce_state'), v = sessionStorage.getItem('sentinel_pkce_verifier');
   sessionStorage.removeItem('sentinel_pkce_state'); sessionStorage.removeItem('sentinel_pkce_verifier');
   return { state: s, verifier: v };
 };
-
 const BASE = '/api';
-
 async function req<T>(path: string, opt: RequestInit = {}): Promise<T> {
   const headers = new Headers(opt.headers || {});
   if (_token) headers.set('Authorization', `Bearer ${_token}`);
@@ -27,17 +23,14 @@ async function req<T>(path: string, opt: RequestInit = {}): Promise<T> {
   }
   return res.status === 204 ? ({} as T) : res.json();
 }
-
 const qs = (p?: Record<string, unknown>) => {
   if (!p) return '';
   const q = new URLSearchParams();
   Object.entries(p).forEach(([k, v]) => v !== undefined && q.set(k, String(v)));
   return q.size ? `?${q}` : '';
 };
-
 const jpost = (path: string, body: unknown) => req(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 const _nUrl = (p: string, v: string, w: number) => `${BASE}${p}?voice=${encodeURIComponent(v)}&words_per_minute=${w}`;
-
 export const api = {
   auth: {
     getConfig: () => req<OIDCConfig>('/auth/config'),

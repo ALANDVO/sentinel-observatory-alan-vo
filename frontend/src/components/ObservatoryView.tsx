@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
 import { DeckSummary, EvaluationOut } from '../types';
-
 interface Props {
   decks: DeckSummary[]; evaluations: EvaluationOut[]; loading: boolean;
   selectedDeckId: string | null; onSelectDeck: (id: string) => void;
   onRunEval: (id: string, opt: { eval_type: string; request_llm_advisory: boolean }) => Promise<void>;
 }
-
 export const ObservatoryView: React.FC<Props> = ({ decks, evaluations, loading, selectedDeckId, onSelectDeck, onRunEval }) => {
   const [evalType, setEvalType] = useState('full'), [requestLlm, setRequestLlm] = useState(false);
   const [running, setRunning] = useState(false), [runError, setRunError] = useState<string | null>(null);
   const activeId = selectedDeckId || (decks[0]?.id ?? null);
   const latestEval = evaluations.find((e) => e.deck_id === activeId) || null;
-
   const handleRun = async () => {
     if (!activeId) return;
     setRunning(true); setRunError(null);
@@ -20,13 +17,11 @@ export const ObservatoryView: React.FC<Props> = ({ decks, evaluations, loading, 
     catch (err: unknown) { setRunError(err instanceof Error ? err.message : 'Evaluation run failed'); }
     finally { setRunning(false); }
   };
-
   const getScore = (val: number | null) => {
     if (val === null || val === undefined) return <span className="tag">N/A</span>;
     const p = Math.round(val * 100);
     return <span className={`score-badge ${val >= 0.8 ? 'badge-good' : val >= 0.6 ? 'badge-med' : 'badge-low'}`}>{p}%</span>;
   };
-
   return (
     <div className="observatory-container">
       <div className="section-header">

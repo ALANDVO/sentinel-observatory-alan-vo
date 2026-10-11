@@ -3,8 +3,7 @@ import { DeckOut, DeckNarrationOut } from '../types';
 import { api } from '../api';
 
 interface DeckDetailProps {
-  deck: DeckOut;
-  onBack: () => void;
+  deck: DeckOut; onBack: () => void;
   onAddSlide: (deckId: string, slide: { slide_type: string; title: string; body_text: string; speaker_notes: string }) => Promise<void>;
   onRunEval: (deckId: string) => void;
 }
@@ -26,12 +25,10 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
   const currentSlide = slides[selectedSlideIndex];
 
   const handleCreateSlide = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAdding(true);
+    e.preventDefault(); setAdding(true);
     try {
       await onAddSlide(deck.id, { slide_type: newType, title: newTitle, body_text: newBody, speaker_notes: newNotes });
-      setShowAddSlide(false);
-      setNewTitle(''); setNewBody(''); setNewNotes('');
+      setShowAddSlide(false); setNewTitle(''); setNewBody(''); setNewNotes('');
       setSelectedSlideIndex(slides.length);
     } finally { setAdding(false); }
   };
@@ -40,8 +37,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
     setSynthesizing(true);
     try {
       const res = await api.decks.synthesizeNarration(deck.id, voice);
-      setNarrationData(res);
-      setAudioTimestamp(Date.now());
+      setNarrationData(res); setAudioTimestamp(Date.now());
     } finally { setSynthesizing(false); }
   };
 
@@ -97,9 +93,9 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
                 <p style={{ marginTop: '.3rem', fontSize: '.9rem', color: 'var(--muted)' }}>{currentSlide.speaker_notes || 'No speaker notes.'}</p>
               </div>
               <div className="speaker-notes-panel" style={{ marginTop: '1rem' }} data-testid="narration-panel">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="section-header">
                   <h4>🎧 Audio Narration</h4>
-                  <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
+                  <div className="card-actions">
                     <select className="form-control" style={{ width: 'auto', padding: '.25rem .5rem', fontSize: '.85rem' }} value={voice} onChange={(e) => setVoice(e.target.value)}>
                       <option value="narrator-en">Default Narrator</option>
                       <option value="narrator-exec">Executive Voice</option>
@@ -114,7 +110,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
                 <div style={{ marginTop: '.75rem' }}>
                   <p style={{ fontSize: '.85rem', color: 'var(--muted)', marginBottom: '.5rem' }}>Deck Narration Audio (RIFF/WAVE PCM track):</p>
                   <audio data-testid="deck-audio-player" controls style={{ width: '100%', marginBottom: '.5rem' }} src={`${api.decks.narrationAudioUrl(deck.id, voice)}&t=${audioTimestamp}`} />
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div className="card-actions">
                     <a className="btn-secondary btn-sm" href={api.decks.narrationAudioUrl(deck.id, voice)} download={`${deck.title.replace(/\s+/g, '_')}_narration.wav`}>⬇️ Download Deck Audio (.wav)</a>
                     {narrationData && <span className="tag" style={{ background: '#e0f2fe', color: '#0369a1' }}>Synthesized: {narrationData.total_duration_seconds}s ({narrationData.total_words} words)</span>}
                   </div>

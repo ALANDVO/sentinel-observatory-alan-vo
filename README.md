@@ -22,7 +22,7 @@ Sentinel Observatory turns documents or topics into native PowerPoint decks thro
 | **Deck Observatory** | Score cognitive load across every slide — information density, bullet brevity, hierarchy balance, readability grade, MECE alignment |
 | **Data Fidelity Audit** | Cross-validate numeric claims in slides against source data tables; reports precision, recall, and unsupported claims |
 | **Attribution Guard** | Structural integrity check with actionable diagnostics (cross-platform, fail-closed, structured error codes ATTR-001 through ATTR-006) |
-| **Prompt Budget Audit** | Token-budget and bilingual-key-drift audit; validates locale dictionary parity across languages |
+| **Prompt & Locale Audit** | Token-budget, locale dictionary placeholder parity, and doc structural translation drift audit (#302, #303, #304) |
 | **Native PPTX Export** | Compile to real `.pptx` with native bar/line/pie charts, styled tables, slide transitions, and speaker notes via `python-pptx` |
 | **Template Studio** | Register custom `.pptx` templates; scan master slides, placeholder layouts, and theme palettes |
 | **Advisory LLM** | Opt-in explanations via OpenAI-compatible, Anthropic, or Gemini adapters; clearly labeled advisory, never fabricated |
@@ -70,6 +70,10 @@ PYTHONPATH=backend .venv/bin/python -m pytest backend/tests/test_evaluations.py 
 
 # Standalone Attribution Guard integrity gate (#311):
 PYTHONPATH=. .venv/bin/python -m backend.app.services.attribution_guard .
+
+# Standalone Prompt & Locale dictionary audit (#302, #303):
+PYTHONPATH=. .venv/bin/python -m backend.app.services.prompt_audit --dict locales/en.json
+PYTHONPATH=. .venv/bin/python -m backend.app.services.prompt_audit --doc docs/en.md docs/zh.md
 ```
 
 **Approach:** Multi-factor rubric with five independent metrics:
@@ -158,6 +162,7 @@ cd frontend && npm run build
 | `POST` | `/api/evaluations/{id}/fidelity` | Bearer (viewer) | Data fidelity audit |
 | `POST` | `/api/evaluations/{id}/attribution` | Bearer (viewer) | Attribution guard check |
 | `POST` | `/api/evaluations/{id}/prompt-audit` | Bearer (viewer) | Prompt budget and locale audit |
+| `POST` | `/api/evaluations/doc-translation-audit` | Bearer (viewer) | Markdown doc translation drift audit |
 | `GET` | `/api/templates` | Bearer (viewer) | List slide templates |
 | `GET` | `/api/audit/logs` | Bearer (admin) | Security audit log |
 

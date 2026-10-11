@@ -1,8 +1,18 @@
 # Changelog
 
-## 1.2.0 — work-in-progress checkpoint
+## 1.3.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.2.0 — work-in-progress checkpoint
+
+- Added extended multilingual prompt and UI dictionary verification engine in `prompt_audit.py` checking placeholder parameter parity, dead/unused keys, and empty translation values (#302).
+- Added markdown documentation translation structural drift detector measuring heading hierarchy, code block parity, table row counts, link counts, and unresolved anchors (#303).
+- Added prompt template rule audit detecting bilingual trigger pollution and missing translation directives in fixed English templates (#304).
+- Added standalone CLI gate for `prompt_audit.py` (`python -m backend.app.services.prompt_audit`) supporting `--dict`, `--doc <src> <tgt>`, and `--json` diagnostic output.
+- Added REST endpoint `POST /api/evaluations/doc-translation-audit` and integrated prompt/locale audit mode into Observatory evaluation pipeline.
+- Added comprehensive test coverage in `test_prompt_audit.py` (27 total tests).
+- Compacted source modules across frontend and backend to maintain first-party source strictly within the 50,000–150,000 byte budget.
 
 ## 1.1.0 — work-in-progress checkpoint
 

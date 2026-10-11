@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "attribution-guard-cli",
+  "current_feature": "i18n-dictionary-completeness",
   "features": [
     {
       "id": "attribution-guard-cli",
@@ -38,12 +38,17 @@
     {
       "id": "i18n-dictionary-completeness",
       "title": "Extended Multilingual Prompt and UI Dictionary Verification (#302, #303)",
-      "status": "planned",
+      "status": "done",
       "acceptance": [
-        "Validate additional language mappings and synchronizations across locale bundles"
+        "Validate additional language mappings and synchronizations across locale bundles, checking placeholder parity, unused keys, empty values, markdown structural drift, and prompt template trigger pollution"
       ],
-      "implementation": [],
-      "tests": []
+      "implementation": [
+        "backend/app/services/prompt_audit.py",
+        "backend/app/api/evaluations.py"
+      ],
+      "tests": [
+        "backend/tests/test_prompt_audit.py"
+      ]
     }
   ]
 }

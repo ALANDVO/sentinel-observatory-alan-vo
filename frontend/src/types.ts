@@ -121,3 +121,19 @@ export interface DeckNarrationOut {
   slides: SlideNarrationOut[];
 }
 
+export interface SlideSearchResult {
+  deck_id: string;
+  deck_title: string;
+  slide_id: string;
+  position: number;
+  slide_type: string;
+  title: string | null;
+  snippet: string | null;
+  match_fields: string[];
+}
+
+export interface SlideSearchResponse {
+  query: string;
+  total: number;
+  results: SlideSearchResult[];
+}

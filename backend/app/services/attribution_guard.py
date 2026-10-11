@@ -23,21 +23,21 @@ class AttributionGuard:
     def validate_deck_source(self, deck_id: str, source_text: str | None, slides: list[dict]) -> AttributionReport:
         diag: list[DiagnosticItem] = []
         if source_text is not None and len(source_text.strip()) < 10:
-            diag.append(_item("source_text_minimum_length", "ATTR-001", "warning", "Source text is shorter than 10 characters.", rem="Provide ≥ 10 characters."))
+            diag.append(_item("source_text_minimum_length", "ATTR-001", "warning", "Source text is shorter than 10 characters.", rem="Provide ≥10 chars."))
         if len(slides) == 0:
-            diag.append(_item("slide_count_non_zero", "ATTR-002", "error", "Deck contains zero slides.", rem="Provide at least one slide."))
+            diag.append(_item("slide_count_non_zero", "ATTR-002", "error", "Deck contains zero slides.", rem="Provide ≥1 slide."))
         pos = [s.get("position", -1) for s in slides]
         if sorted(pos) != list(range(len(slides))):
-            diag.append(_item("slide_position_continuity", "ATTR-003", "error", f"Slide positions not contiguous 0..N-1: {sorted(pos)}.", rem="Re-order positions sequentially."))
+            diag.append(_item("slide_position_continuity", "ATTR-003", "error", f"Slide positions not contiguous 0..N-1: {sorted(pos)}.", rem="Order positions."))
         missing_titles = [s.get("id", f"pos-{s.get('position', '?')}") for s in slides if s.get("slide_type") == "title" and not (s.get("title") or "").strip()]
         if missing_titles:
-            diag.append(_item("title_slide_has_title", "ATTR-004", "error", f"Title slide(s) missing title: {missing_titles[:5]}", rem="Provide non-empty title."))
+            diag.append(_item("title_slide_has_title", "ATTR-004", "error", f"Title slide(s) missing title: {missing_titles[:5]}", rem="Provide title."))
         bad_charts = [s.get("id", f"pos-{s.get('position', '?')}") for s in slides if s.get("slide_type") == "chart" and (not isinstance(s.get("chart_data"), dict) or not s.get("chart_data", {}).get("categories") or not s.get("chart_data", {}).get("series"))]
         if bad_charts:
-            diag.append(_item("chart_data_schema", "ATTR-005", "warning", f"Chart slide(s) missing valid chart_data: {bad_charts[:5]}", rem="Ensure categories and series are populated."))
+            diag.append(_item("chart_data_schema", "ATTR-005", "warning", f"Chart slide(s) missing valid chart_data: {bad_charts[:5]}", rem="Fix chart data."))
         ids = [s.get("id") for s in slides if s.get("id")]
         if len(ids) != len(set(ids)):
-            diag.append(_item("unique_slide_ids", "ATTR-006", "error", "Duplicate slide IDs detected.", rem="Ensure unique IDs."))
+            diag.append(_item("unique_slide_ids", "ATTR-006", "error", "Duplicate slide IDs detected.", rem="Use unique IDs."))
         return AttributionReport(not any(d.severity == "error" for d in diag), 6, diag)
 
     def validate_from_file(self, source_file: str) -> AttributionReport:
@@ -62,7 +62,7 @@ class AttributionGuard:
 def main(argv: list[str] | None = None) -> int:
     import argparse
     parser = argparse.ArgumentParser(description="Attribution Guard integrity gate")
-    parser.add_argument("target", nargs="?", default=".", help="Path to deck source file or workspace directory")
+    parser.add_argument("target", nargs="?", default=".", help="Deck file or directory")
     parser.add_argument("--json", action="store_true", help="Output diagnostics in JSON format")
     args = parser.parse_args(argv)
     guard, p = AttributionGuard(), Path(os.path.normpath(args.target))

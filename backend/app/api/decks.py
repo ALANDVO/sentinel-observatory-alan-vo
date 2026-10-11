@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.core.security import Role, get_current_user, require_role
@@ -54,11 +55,36 @@ def _finish_deck_create(db: Session, deck: Deck, user: dict, src: str) -> DeckOu
     _audit.log(db, "create_deck", actor_sub=user.get("sub"), actor_email=user.get("email"), resource_type="deck", resource_id=deck.id, detail={"source_type": src})
     db.commit(); db.refresh(deck); return DeckOut.model_validate(deck)
 
+class SlideSearchResult(BaseModel):
+    deck_id: str; deck_title: str; slide_id: str; position: int; slide_type: str
+    title: str | None; snippet: str | None; match_fields: list[str]
+
+class SlideSearchResponse(BaseModel):
+    query: str; total: int; results: list[SlideSearchResult]
+
+@router.get("/search/slides", response_model=SlideSearchResponse)
+def search_slides(q: str = Query(..., min_length=2, max_length=200), limit: int = Query(20, ge=1, le=50), db: Session = Depends(get_db), user: dict = Depends(get_current_user)) -> SlideSearchResponse:
+    term = q.strip().lower()
+    slides = db.query(Slide).join(Deck).filter(or_(
+        Slide.title.ilike(f"%{term}%"),
+        Slide.body_text.ilike(f"%{term}%"),
+        Slide.speaker_notes.ilike(f"%{term}%"),
+    )).order_by(Deck.created_at.desc()).limit(limit).all()
+    results = []
+    for s in slides:
+        fields = [f for f, col in [("title", s.title), ("body", s.body_text), ("notes", s.speaker_notes)] if col and term in col.lower()]
+        body = (s.body_text or "")[:200]
+        idx = body.lower().find(term)
+        snippet = ("…" + body[max(0, idx - 40):idx + 80] + "…").strip() if idx >= 0 else body[:120]
+        results.append(SlideSearchResult(deck_id=s.deck_id, deck_title=s.deck.title if s.deck else "", slide_id=s.id, position=s.position, slide_type=s.slide_type, title=s.title, snippet=snippet or None, match_fields=fields))
+    return SlideSearchResponse(query=q, total=len(results), results=results)
+
 @router.get("", response_model=DeckListResponse)
-def list_decks(skip: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=100), source_type: str | None = None, status: str | None = Query(None, alias="status"), db: Session = Depends(get_db), user: dict = Depends(get_current_user)) -> DeckListResponse:
+def list_decks(skip: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=100), source_type: str | None = None, status: str | None = Query(None, alias="status"), search: str | None = Query(None, max_length=200), db: Session = Depends(get_db), user: dict = Depends(get_current_user)) -> DeckListResponse:
     q = db.query(Deck)
     if source_type: q = q.filter(Deck.source_type == source_type)
     if status: q = q.filter(Deck.status == status)
+    if search: q = q.filter(Deck.title.ilike(f"%{search.strip()}%"))
     return DeckListResponse(total=q.count(), items=q.order_by(Deck.created_at.desc()).offset(skip).limit(limit).all())
 
 @router.post("/generate/topic", response_model=DeckOut, status_code=status.HTTP_201_CREATED)
@@ -124,12 +150,6 @@ def get_slide_narration_audio(deck_id: str, slide_id: str, voice: str = Query("n
     return Response(content=sn.audio_bytes, media_type="audio/wav", headers={"Content-Disposition": f'inline; filename="slide_{slide.position}_narration.wav"'})
 @router.get("/{deck_id}/layout")
 def get_deck_layout(deck_id: str, db: Session = Depends(get_db), user: dict = Depends(require_role(Role.VIEWER))) -> dict:
-    """Return computed smart layout specifications for all slides in a deck.
-
-    Each slide entry includes density_class, typography (title_pt, body_pt),
-    content_box (left/top/width/height in inches), and columns (count + per-column boxes).
-    The response is deterministic from slide content and requires no LLM or network call.
-    """
     from backend.app.services.layout_engine import SlideLayoutEngine
     deck = _get_deck(db, deck_id)
     slides = _deck_slides(deck)

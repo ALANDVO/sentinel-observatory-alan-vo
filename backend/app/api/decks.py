@@ -19,18 +19,17 @@ router = APIRouter(prefix="/decks", tags=["decks"])
 _gen, _comp, _audit, _narr, _tmpls, _layout = SlideGeneratorService(), PptxCompiler(), AuditService(), AudioNarrationService(), TemplateService(), SlideLayoutEngine()
 _DB, _U = Depends(get_db), Depends(get_current_user)
 _OP, _VW, _ADM = Depends(require_role(Role.OPERATOR)), Depends(require_role(Role.VIEWER)), Depends(require_role(Role.ADMIN))
+class _Base(BaseModel):
+    model_config = {"from_attributes": True}
 
-class SlideOut(BaseModel):
+class SlideOut(_Base):
     id: str; position: int; slide_type: str; title: str | None; body_text: str | None; speaker_notes: str | None; chart_data: dict | None = None; table_data: dict | None = None; layout_config: dict = {}
-    model_config = {"from_attributes": True}
 
-class DeckOut(BaseModel):
+class DeckOut(_Base):
     id: str; title: str; topic: str | None; source_type: str; status: str; slide_count: int; template_id: str | None = None; meta: dict = {}; created_at: Any; updated_at: Any; slides: list[SlideOut] = []
-    model_config = {"from_attributes": True}
 
-class DeckSummary(BaseModel):
+class DeckSummary(_Base):
     id: str; title: str; source_type: str; status: str; slide_count: int; created_at: Any
-    model_config = {"from_attributes": True}
 
 class DeckListResponse(BaseModel):
     total: int; items: list[DeckSummary]

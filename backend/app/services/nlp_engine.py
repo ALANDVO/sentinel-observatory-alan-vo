@@ -15,7 +15,7 @@ class SlideBlueprint:
 class DeckBlueprint:
     title: str; topic: str; slides: list[SlideBlueprint] = field(default_factory=list); keywords: list[str] = field(default_factory=list); reading_level: float = 0.0
 
-_STOP_WORDS = frozenset("a an the and or but in on at to for of with by from is are was were be been have has had do will would can all as not more such like just into than over after up out so if other which while when how what where who then each every some very same here there".split())
+_STOP_WORDS = frozenset("a an the and or but in on at to for of with by from is are was were be been have has had do will would can as not more such like just into than over after up out so if other which while when how what where who then each every some very same here".split())
 
 def _tokenize(text: str) -> list[str]:
     return re.findall(r"[a-z][a-z0-9'\-]*[a-z0-9]|[a-z]", text.lower())

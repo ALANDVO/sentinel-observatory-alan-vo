@@ -17,6 +17,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
   const [newType, setNewType] = useState('content');
   const [adding, setAdding] = useState(false);
   const [voice, setVoice] = useState('narrator-en');
+  const [wpm, setWpm] = useState<number>(150);
   const [synthesizing, setSynthesizing] = useState(false);
   const [narrationData, setNarrationData] = useState<DeckNarrationOut | null>(null);
   const [audioTimestamp, setAudioTimestamp] = useState<number>(Date.now());
@@ -28,15 +29,14 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
     e.preventDefault(); setAdding(true);
     try {
       await onAddSlide(deck.id, { slide_type: newType, title: newTitle, body_text: newBody, speaker_notes: newNotes });
-      setShowAddSlide(false); setNewTitle(''); setNewBody(''); setNewNotes('');
-      setSelectedSlideIndex(slides.length);
+      setShowAddSlide(false); setNewTitle(''); setNewBody(''); setNewNotes(''); setSelectedSlideIndex(slides.length);
     } finally { setAdding(false); }
   };
 
   const handleSynthesizeNarration = async () => {
     setSynthesizing(true);
     try {
-      const res = await api.decks.synthesizeNarration(deck.id, voice);
+      const res = await api.decks.synthesizeNarration(deck.id, voice, wpm);
       setNarrationData(res); setAudioTimestamp(Date.now());
     } finally { setSynthesizing(false); }
   };
@@ -82,11 +82,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
               <div className="slide-canvas">
                 <span className="tag">{currentSlide.slide_type.toUpperCase()}</span>
                 <h3 style={{ marginTop: '.5rem', fontSize: '1.2rem' }}>{currentSlide.title}</h3>
-                {currentSlide.body_text && (
-                  <div className="canvas-bullets" style={{ marginTop: '1rem' }}>
-                    {currentSlide.body_text.split('\n').map((l, i) => <div key={i}>• {l}</div>)}
-                  </div>
-                )}
+                {currentSlide.body_text && <div className="canvas-bullets" style={{ marginTop: '1rem' }}>{currentSlide.body_text.split('\n').map((l, i) => <div key={i}>• {l}</div>)}</div>}
               </div>
               <div className="speaker-notes-panel">
                 <h4>🎙️ Speaker Notes</h4>
@@ -95,24 +91,28 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
               <div className="speaker-notes-panel" style={{ marginTop: '1rem' }} data-testid="narration-panel">
                 <div className="section-header">
                   <h4>🎧 Audio Narration</h4>
-                  <div className="card-actions">
-                    <select className="form-control" style={{ width: 'auto', padding: '.25rem .5rem', fontSize: '.85rem' }} value={voice} onChange={(e) => setVoice(e.target.value)}>
+                  <div className="card-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <select aria-label="Narration Voice" className="form-control" style={{ width: 'auto', padding: '.25rem .5rem', fontSize: '.85rem' }} value={voice} onChange={(e) => setVoice(e.target.value)}>
                       <option value="narrator-en">Default Narrator</option>
                       <option value="narrator-exec">Executive Voice</option>
                       <option value="narrator-tech">Technical Voice</option>
                       <option value="narrator-calm">Calm Voice</option>
                     </select>
-                    <button className="btn-primary btn-sm" onClick={handleSynthesizeNarration} disabled={synthesizing}>
-                      {synthesizing ? 'Synthesizing…' : 'Synthesize Audio'}
-                    </button>
+                    <select aria-label="Narration Pace" data-testid="narration-wpm-select" className="form-control" style={{ width: 'auto', padding: '.25rem .5rem', fontSize: '.85rem' }} value={wpm} onChange={(e) => setWpm(Number(e.target.value))}>
+                      <option value={120}>Deliberate (120 WPM)</option>
+                      <option value={150}>Standard (150 WPM)</option>
+                      <option value={180}>Brisk (180 WPM)</option>
+                      <option value={210}>Fast (210 WPM)</option>
+                    </select>
+                    <button className="btn-primary btn-sm" onClick={handleSynthesizeNarration} disabled={synthesizing}>{synthesizing ? 'Synthesizing…' : 'Synthesize Audio'}</button>
                   </div>
                 </div>
                 <div style={{ marginTop: '.75rem' }}>
                   <p style={{ fontSize: '.85rem', color: 'var(--muted)', marginBottom: '.5rem' }}>Deck Narration Audio (RIFF/WAVE PCM track):</p>
-                  <audio data-testid="deck-audio-player" controls style={{ width: '100%', marginBottom: '.5rem' }} src={`${api.decks.narrationAudioUrl(deck.id, voice)}&t=${audioTimestamp}`} />
+                  <audio data-testid="deck-audio-player" controls style={{ width: '100%', marginBottom: '.5rem' }} src={`${api.decks.narrationAudioUrl(deck.id, voice, wpm)}&t=${audioTimestamp}`} />
                   <div className="card-actions">
-                    <a className="btn-secondary btn-sm" href={api.decks.narrationAudioUrl(deck.id, voice)} download={`${deck.title.replace(/\s+/g, '_')}_narration.wav`}>⬇️ Download Deck Audio (.wav)</a>
-                    {narrationData && <span className="tag" style={{ background: '#e0f2fe', color: '#0369a1' }}>Synthesized: {narrationData.total_duration_seconds}s ({narrationData.total_words} words)</span>}
+                    <a className="btn-secondary btn-sm" href={api.decks.narrationAudioUrl(deck.id, voice, wpm)} download={`${deck.title.replace(/\s+/g, '_')}_narration.wav`}>⬇️ Download Deck Audio (.wav)</a>
+                    {narrationData && <span className="tag" style={{ background: '#e0f2fe', color: '#0369a1' }}>Synthesized: {narrationData.total_duration_seconds}s ({narrationData.total_words} words @ {wpm} wpm)</span>}
                   </div>
                 </div>
               </div>
@@ -123,36 +123,13 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deck, onBack, onAddSlide
       {showAddSlide && (
         <div className="modal-overlay" onClick={() => setShowAddSlide(false)}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Add New Slide</h3>
-              <button className="btn-close" onClick={() => setShowAddSlide(false)}>&times;</button>
-            </div>
+            <div className="modal-header"><h3>Add New Slide</h3><button className="btn-close" onClick={() => setShowAddSlide(false)}>&times;</button></div>
             <form onSubmit={handleCreateSlide}>
-              <div className="form-group">
-                <label>Type</label>
-                <select className="form-control" value={newType} onChange={(e) => setNewType(e.target.value)}>
-                  <option value="content">Content with Bullets</option>
-                  <option value="kpi">Key Metric / KPI</option>
-                  <option value="table">Data Table</option>
-                  <option value="conclusion">Summary / Conclusion</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Title</label>
-                <input type="text" className="form-control" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label>Body Bullets</label>
-                <textarea className="form-control" rows={3} value={newBody} onChange={(e) => setNewBody(e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>Speaker Notes</label>
-                <textarea className="form-control" rows={2} value={newNotes} onChange={(e) => setNewNotes(e.target.value)} />
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={() => setShowAddSlide(false)}>Cancel</button>
-                <button type="submit" className="btn-primary" disabled={adding}>{adding ? 'Adding…' : 'Add Slide'}</button>
-              </div>
+              <div className="form-group"><label>Type</label><select className="form-control" value={newType} onChange={(e) => setNewType(e.target.value)}><option value="content">Content with Bullets</option><option value="kpi">Key Metric / KPI</option><option value="table">Data Table</option><option value="conclusion">Summary / Conclusion</option></select></div>
+              <div className="form-group"><label>Title</label><input type="text" className="form-control" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required /></div>
+              <div className="form-group"><label>Body Bullets</label><textarea className="form-control" rows={3} value={newBody} onChange={(e) => setNewBody(e.target.value)} /></div>
+              <div className="form-group"><label>Speaker Notes</label><textarea className="form-control" rows={2} value={newNotes} onChange={(e) => setNewNotes(e.target.value)} /></div>
+              <div className="modal-footer"><button type="button" className="btn-secondary" onClick={() => setShowAddSlide(false)}>Cancel</button><button type="submit" className="btn-primary" disabled={adding}>{adding ? 'Adding…' : 'Add Slide'}</button></div>
             </form>
           </div>
         </div>

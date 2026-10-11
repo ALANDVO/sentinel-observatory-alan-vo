@@ -9,15 +9,13 @@ SlideType = Literal["title", "content", "kpi", "chart", "table", "comparison", "
 @dataclass
 class SlideBlueprint:
     position: int; slide_type: SlideType; title: str; bullets: list[str] = field(default_factory=list)
-    speaker_notes: str = ""; chart_data: dict | None = None; table_data: dict | None = None
-    layout_config: dict = field(default_factory=dict)
+    speaker_notes: str = ""; chart_data: dict | None = None; table_data: dict | None = None; layout_config: dict = field(default_factory=dict)
 
 @dataclass
 class DeckBlueprint:
-    title: str; topic: str; slides: list[SlideBlueprint] = field(default_factory=list)
-    keywords: list[str] = field(default_factory=list); reading_level: float = 0.0
+    title: str; topic: str; slides: list[SlideBlueprint] = field(default_factory=list); keywords: list[str] = field(default_factory=list); reading_level: float = 0.0
 
-_STOP_WORDS = frozenset("a an the and or but in on at to for of with by from is are was were be been being have has had do does did will would could should may might this that these those it its we they he she you your our their his her s t can also all as not more most such like just into through than over after about up out so if no only other which while when how what where who whom then both either each every few some many very too same here there".split())
+_STOP_WORDS = frozenset("a an the and or but in on at to for of with by from is are was were be been have has had do will would can all as not more such like just into than over after up out so if other which while when how what where who then each every some very same here there".split())
 
 def _tokenize(text: str) -> list[str]:
     return re.findall(r"[a-z][a-z0-9'\-]*[a-z0-9]|[a-z]", text.lower())
@@ -57,8 +55,7 @@ def detect_slide_type(title: str, body: str) -> SlideType:
 
 def _split_into_sections(text: str) -> list[tuple[str, str]]:
     matches = list(re.compile(r"^(?:#{1,3}\s+|(?=[A-Z][A-Z\s]{4,}$))(.*)", re.MULTILINE).finditer(text))
-    if not matches:
-        return [(p.split(".")[0][:80], p) for p in [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]]
+    if not matches: return [(p.split(".")[0][:80], p) for p in [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]]
     sections = []
     for i, m in enumerate(matches):
         heading = m.group(1).strip() if m.group(1).strip() else m.group(0).strip("# ").strip()
@@ -79,8 +76,7 @@ def _synthesize_speaker_notes(title: str, bullets: list[str]) -> str:
 
 def _make_sample_chart_data(title: str, keywords: list[str]) -> dict:
     cats = keywords[:5] if keywords else ["Category A", "Category B", "Category C"]
-    def _val(l: str, s: str) -> float:
-        return round(20.0 + (int(hashlib.md5(f"{l}:{s}".encode()).hexdigest(), 16) % 800) / 10.0, 1)
+    def _val(l: str, s: str) -> float: return round(20.0 + (int(hashlib.md5(f"{l}:{s}".encode()).hexdigest(), 16) % 800) / 10.0, 1)
     return {"chart_type": "bar", "title": title, "categories": cats, "series": [{"name": "Value", "values": [_val(c, title) for c in cats]}]}
 
 def _make_sample_table_data(columns: list[str], rows_count: int = 4) -> dict:

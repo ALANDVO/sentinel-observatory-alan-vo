@@ -1,8 +1,16 @@
 # Changelog
 
-## 1.1.0 — work-in-progress checkpoint
+## 1.2.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.1.0 — work-in-progress checkpoint
+
+- Added standalone CLI gate for `attribution_guard.py` (`python -m backend.app.services.attribution_guard`) with fail-closed semantics, structured diagnostics, and remediation advice resolving issue #311.
+- Added cross-platform workspace directory validation and `--json` diagnostic output flag.
+- Added automated CLI and workspace tests in `test_attribution_guard.py`.
+- Optimized codebase to stay strictly within the 50,000–150,000 byte source budget.
+- Cleaned up deprecated startup event hooks and removed dead backup files.
 
 ## 1.0.0 — work-in-progress checkpoint
 

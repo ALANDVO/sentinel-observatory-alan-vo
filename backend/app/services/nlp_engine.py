@@ -1,5 +1,4 @@
-"""NLP Engine: deterministic offline outline decomposition, topic categorization,
-keyword extraction, and speaker note synthesis."""
+"""NLP Engine: deterministic outline decomposition, topic categorization, and keyword extraction."""
 from __future__ import annotations
 
 import hashlib
@@ -29,45 +28,35 @@ class DeckBlueprint:
     reading_level: float = 0.0
 
 _STOP_WORDS = frozenset(
-    """a an the and or but in on at to for of with by from is are was were be been
-    being have has had do does did will would could should may might this that these
-    those it its we they he she you your our their his her s t can also all as not
-    more most such like just into through than over after about up out so if no only
-    other which while when how what where who whom then than both either each every
-    few some many more very too much such same here there""".split()
+    "a an the and or but in on at to for of with by from is are was were be been being have has had do does did will would could should may might this that these those it its we they he she you your our their his her s t can also all as not more most such like just into through than over after about up out so if no only other which while when how what where who whom then both either each every few some many very too same here there".split()
 )
 
 def _tokenize(text: str) -> list[str]:
     return re.findall(r"[a-z][a-z0-9'\-]*[a-z0-9]|[a-z]", text.lower())
 
 def extract_keywords(text: str, top_k: int = 15) -> list[str]:
-    tokens = _tokenize(text)
     freq: dict[str, int] = {}
-    for tok in tokens:
+    for tok in _tokenize(text):
         if tok not in _STOP_WORDS and len(tok) > 3:
             freq[tok] = freq.get(tok, 0) + 1
     return [t for t, _ in sorted(freq.items(), key=lambda x: -x[1])[:top_k]]
 
 def _count_syllables(word: str) -> int:
-    word = word.lower().strip(".,;:!?\"'")
-    vowels = re.findall(r"[aeiou]", word)
-    if word.endswith("e") and len(word) > 2:
+    w = word.lower().strip(".,;:!?\"'")
+    vowels = re.findall(r"[aeiou]", w)
+    if w.endswith("e") and len(w) > 2:
         vowels = vowels[:-1]
     return max(1, len(vowels))
 
 def flesch_kincaid_grade(text: str) -> float:
     sentences = [s.strip() for s in re.split(r"[.!?]+", text) if s.strip()]
-    all_words = _tokenize(text)
-    if not sentences or not all_words:
+    words = _tokenize(text)
+    if not sentences or not words:
         return 0.0
-    asl = len(all_words) / len(sentences)
-    asw = sum(_count_syllables(w) for w in all_words) / len(all_words)
+    asl, asw = len(words) / len(sentences), sum(_count_syllables(w) for w in words) / len(words)
     return round(max(0.0, 0.39 * asl + 11.8 * asw - 15.59), 2)
 
-_KPI_PATTERNS = [
-    re.compile(r"\b\d+[\.,]?\d*\s*(?:%|percent|x|times|billion|million|k|ms|s|fps|gb|mb)\b", re.I),
-    re.compile(r"\b(?:metric|kpi|roi|cagr|conversion|retention|churn|latency|throughput)\b", re.I),
-]
+_KPI_PATTERNS = [re.compile(r"\b\d+[\.,]?\d*\s*(?:%|percent|x|times|billion|million|k|ms|s|fps|gb|mb)\b", re.I), re.compile(r"\b(?:metric|kpi|roi|cagr|conversion|retention|churn|latency|throughput)\b", re.I)]
 _CHART_PATTERNS = [re.compile(r"\b(?:chart|graph|trend|over time|growth|distribution|percentage)\b", re.I)]
 _TABLE_PATTERNS = [re.compile(r"\b(?:compare|comparison|versus|vs\.?|table|matrix|rows|columns)\b", re.I)]
 _PROCESS_PATTERNS = [re.compile(r"\b(?:step\s*\d+|phase\s*\d+|stage|pipeline|workflow|process|flow)\b", re.I)]
@@ -78,14 +67,10 @@ def detect_slide_type(title: str, body: str) -> SlideType:
     charts = sum(1 for p in _CHART_PATTERNS if p.search(comb))
     tables = sum(1 for p in _TABLE_PATTERNS if p.search(comb))
     proc = sum(1 for p in _PROCESS_PATTERNS if p.search(comb))
-    if kpis >= 2:
-        return "kpi"
-    if charts >= 1 and kpis >= 1:
-        return "chart"
-    if tables >= 1:
-        return "comparison"
-    if proc >= 1:
-        return "process"
+    if kpis >= 2: return "kpi"
+    if charts >= 1 and kpis >= 1: return "chart"
+    if tables >= 1: return "comparison"
+    if proc >= 1: return "process"
     return "content"
 
 def _split_into_sections(text: str) -> list[tuple[str, str]]:

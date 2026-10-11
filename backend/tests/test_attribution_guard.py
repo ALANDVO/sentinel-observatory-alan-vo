@@ -112,3 +112,71 @@ def test_file_validation_valid_file(guard, tmp_path):
     f.write_text("This is valid source text for the deck.")
     report = guard.validate_from_file(str(f))
     assert report.passed is True
+
+
+def test_workspace_validation(guard, tmp_path):
+    ws = tmp_path / "workspace"
+    ws.mkdir()
+    rep = guard.validate_workspace(str(ws))
+    assert rep.passed is True
+    # Warning about no source files
+    assert any(d.code == "ATTR-DIR-002" for d in rep.diagnostics)
+
+    (ws / "notes.txt").write_text("Presentation background research notes for AI observatory.")
+    rep2 = guard.validate_workspace(str(ws))
+    assert rep2.passed is True
+    assert rep2.check_count >= 2
+
+
+def test_cli_main_valid_file(tmp_path, capsys):
+    from backend.app.services.attribution_guard import main
+    f = tmp_path / "source.txt"
+    f.write_text("Valid presentation source documentation text.")
+    exit_code = main([str(f)])
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "[AttributionGuard] PASS" in captured.out
+
+
+def test_cli_main_missing_target_fails_closed_with_diagnostics(tmp_path, capsys):
+    from backend.app.services.attribution_guard import main
+    missing = str(tmp_path / "nonexistent.txt")
+    exit_code = main([missing])
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    # Issue #311 resolution: MUST emit actionable diagnostics, never silent exit
+    assert "[AttributionGuard] FAIL" in captured.err
+    assert "ATTR-CLI-001" in captured.err
+    assert "Remediation:" in captured.err
+
+
+def test_cli_main_json_output(tmp_path, capsys):
+    import json
+    from backend.app.services.attribution_guard import main
+    f = tmp_path / "source.txt"
+    f.write_text("Valid source text content.")
+    exit_code = main([str(f), "--json"])
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    data = json.loads(captured.out)
+    assert data["passed"] is True
+    assert "diagnostics" in data
+
+
+def test_cli_main_deck_json_validation(tmp_path, capsys):
+    import json
+    from backend.app.services.attribution_guard import main
+    deck_file = tmp_path / "deck.json"
+    deck_file.write_text(json.dumps({
+        "id": "deck-cli",
+        "source_text": "Sufficient source text for presentation",
+        "slides": [
+            {"id": "s0", "position": 0, "slide_type": "title", "title": "Main Title", "body_text": "", "chart_data": None},
+            {"id": "s1", "position": 1, "slide_type": "content", "title": "Body Slide", "body_text": "Point", "chart_data": None},
+        ],
+    }))
+    exit_code = main([str(deck_file)])
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "[AttributionGuard] PASS" in captured.out
+

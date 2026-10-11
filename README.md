@@ -63,10 +63,13 @@ flowchart TD
 
 The observatory evaluation is deterministic and runs offline — no LLM key required.
 
-**Reproducible command:**
+**Reproducible commands:**
 ```bash
 cd /var/lib/alan-portfolio/workspaces/alan/sentinel-observatory-alan-vo
 PYTHONPATH=backend .venv/bin/python -m pytest backend/tests/test_evaluations.py -v
+
+# Standalone Attribution Guard integrity gate (#311):
+PYTHONPATH=. .venv/bin/python -m backend.app.services.attribution_guard .
 ```
 
 **Approach:** Multi-factor rubric with five independent metrics:

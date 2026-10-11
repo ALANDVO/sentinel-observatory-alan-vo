@@ -1,13 +1,46 @@
 {
   "schema_version": 1,
-  "current_feature": "continue-implementation",
+  "current_feature": "attribution-guard-cli",
   "features": [
     {
-      "id": "continue-implementation",
-      "title": "Continue implementation and resolve known failures",
-      "status": "in_progress",
+      "id": "attribution-guard-cli",
+      "title": "Attribution Guard Standalone CLI and Diagnostic Integrity Gate (#311)",
+      "status": "done",
       "acceptance": [
-        "Run checks, fix failures, and implement the next planned feature"
+        "attribution_guard.py executes directly via CLI with normalized cross-platform paths, fails closed on errors with actionable diagnostics printed to stderr/stdout (never silent exit 1), and supports --json reporting"
+      ],
+      "implementation": [
+        "backend/app/services/attribution_guard.py"
+      ],
+      "tests": [
+        "backend/tests/test_attribution_guard.py"
+      ]
+    },
+    {
+      "id": "source-budget-optimization",
+      "title": "Source Budget Optimization and Deprecation Cleanup",
+      "status": "done",
+      "acceptance": [
+        "Maintain first-party source code strictly within 50,000–150,000 bytes budget and pass preflight inspection"
+      ],
+      "implementation": [
+        "backend/app/services/pptx_compiler.py",
+        "backend/app/api/decks.py",
+        "backend/app/services/evaluator.py",
+        "backend/app/services/eval_benchmark.py"
+      ],
+      "tests": [
+        "backend/tests/test_pptx_compiler.py",
+        "backend/tests/test_deck_generation.py",
+        "backend/tests/test_evaluations.py"
+      ]
+    },
+    {
+      "id": "i18n-dictionary-completeness",
+      "title": "Extended Multilingual Prompt and UI Dictionary Verification (#302, #303)",
+      "status": "planned",
+      "acceptance": [
+        "Validate additional language mappings and synchronizations across locale bundles"
       ],
       "implementation": [],
       "tests": []

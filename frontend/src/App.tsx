@@ -119,7 +119,7 @@ export const App: React.FC = () => {
         }}
       />
       <footer className="app-footer">
-        <div>Sentinel Observatory v1.0.0 &bull; Alan Vo (<a href="mailto:alanvo@gmail.com">alanvo@gmail.com</a>) &bull; GitHub ALANDVO</div>
+        <div>Sentinel Observatory &bull; Alan Vo (<a href="mailto:alanvo@gmail.com">alanvo@gmail.com</a>) &bull; GitHub ALANDVO</div>
       </footer>
     </div>
   );

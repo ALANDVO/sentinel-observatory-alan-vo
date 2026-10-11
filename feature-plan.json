@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "i18n-dictionary-completeness",
+  "current_feature": "dynamic-version-and-lifespan",
   "features": [
     {
       "id": "attribution-guard-cli",
@@ -48,6 +48,22 @@
       ],
       "tests": [
         "backend/tests/test_prompt_audit.py"
+      ]
+    },
+    {
+      "id": "dynamic-version-and-lifespan",
+      "title": "Dynamic Version Exposure and FastAPI Lifespan Handler Migration",
+      "status": "done",
+      "acceptance": [
+        "Expose dynamic product version metadata in /api/health and FastAPI OpenAPI specs read from VERSION, and migrate deprecated on_event startup handler to async lifespan context manager with clean timezone-aware UTC tests"
+      ],
+      "implementation": [
+        "backend/app/main.py",
+        "backend/app/api/health.py"
+      ],
+      "tests": [
+        "backend/tests/test_auth_and_integration.py",
+        "backend/tests/test_persistence_audit.py"
       ]
     }
   ]

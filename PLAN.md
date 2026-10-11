@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-i18n-dictionary-completeness
+dynamic-version-and-lifespan
 
 ## Roadmap
 
@@ -40,4 +40,15 @@ Acceptance:
 Implementation: `backend/app/services/prompt_audit.py`, `backend/app/api/evaluations.py`
 
 Tests: `backend/tests/test_prompt_audit.py`
+
+### dynamic-version-and-lifespan — Dynamic Version Exposure and FastAPI Lifespan Handler Migration
+
+Status: done
+
+Acceptance:
+- Expose dynamic product version metadata in /api/health and FastAPI OpenAPI specs read from VERSION, and migrate deprecated on_event startup handler to async lifespan context manager with clean timezone-aware UTC tests
+
+Implementation: `backend/app/main.py`, `backend/app/api/health.py`
+
+Tests: `backend/tests/test_auth_and_integration.py`, `backend/tests/test_persistence_audit.py`
 

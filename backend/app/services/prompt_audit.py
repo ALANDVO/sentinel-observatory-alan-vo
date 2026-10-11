@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-_MODEL_WINDOWS = {"gpt-3.5-turbo": 4096, "gpt-4": 8192, "gpt-4o": 128000, "gpt-4o-mini": 128000, "claude-3-haiku-20240307": 200000, "claude-3-sonnet-20240229": 200000, "gemini-1.5-flash": 1048576, "gemini-1.5-pro": 2097152}
+_MODEL_WINDOWS = {"gpt-3.5-turbo": 4096, "gpt-4": 8192, "gpt-4o": 128000, "gpt-4o-mini": 128000, "claude-3-haiku-20240307": 200000, "gemini-1.5-flash": 1048576, "gemini-1.5-pro": 2097152}
 _BILINGUAL_SUFFIX_RE = re.compile(r"_(?:zh|en|ja|fr|de|es|pt|ko|ar)(?:_[a-z]{2})?$", re.I)
 _CJK_RE = re.compile(r"[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]")
 _PLACEHOLDER_RE = re.compile(r"\{([a-zA-Z0-9_]+)\}")
@@ -35,16 +35,16 @@ class PromptAuditService:
         full = " ".join(f"{s.get('title') or ''} {s.get('body_text') or ''} {s.get('speaker_notes') or ''}" for s in slides)
         toks, win = _estimate_tokens(full), _MODEL_WINDOWS.get(model)
         if win and toks > int(win * 0.8):
-            fnd.append(AuditFinding("token_budget_80pct", "warning", f"Tokens ({toks}) exceeds 80% of {model} window ({win}).", suggestion="Condense content."))
+            fnd.append(AuditFinding("token_budget_80pct", "warning", f"Tokens ({toks}) exceeds 80% of {model} window ({win}).", ))
         if locale_keys_per_slide:
             for i, kd in enumerate(locale_keys_per_slide):
                 for k in kd:
-                    if _BILINGUAL_SUFFIX_RE.search(k): fnd.append(AuditFinding("bilingual_key_suffix_pollution", "error", f"Key '{k}' uses language suffix violating schema.", location=f"slide_index={i}", suggestion="Use neutral keys."))
+                    if _BILINGUAL_SUFFIX_RE.search(k): fnd.append(AuditFinding("bilingual_key_suffix_pollution", "error", f"Key {k} uses language suffix violating schema", location=f"slide_index={i}", ))
         for i, s in enumerate(slides):
             if _CJK_RE.search(s.get("body_text") or "") and not s.get("locale_override"):
                 fnd.append(AuditFinding("cjk_content_without_locale_override", "info", f"Slide {i} has CJK chars without locale_override.", location=f"slide_id={s.get('id', i)}"))
             if (nt := _estimate_tokens(s.get("speaker_notes") or "")) > 500:
-                fnd.append(AuditFinding("speaker_notes_token_limit", "warning", f"Speaker notes for slide {i} ({nt} tokens) exceeds 500.", location=f"slide_id={s.get('id', i)}", suggestion="Trim notes."))
+                fnd.append(AuditFinding("speaker_notes_token_limit", "warning", f"Speaker notes for slide {i} ({nt} tokens) exceeds 500.", location=f"slide_id={s.get('id', i)}", ))
         return PromptAuditReport(not any(x.severity == "error" for x in fnd), toks, win, fnd)
 
     def audit_locale_dictionary(self, dictionaries: dict[str, dict[str, str]], referenced_keys: list[str] | set[str] | None = None) -> PromptAuditReport:
@@ -55,20 +55,20 @@ class PromptAuditService:
         r_keys = set(r_dict.keys())
         for loc in locs[1:]:
             lk = set(dictionaries[loc].keys())
-            if miss := r_keys - lk: fnd.append(AuditFinding("locale_key_parity_missing", "error", f"Locale '{loc}' missing keys vs '{r_loc}': {sorted(miss)[:10]}", location=f"locale={loc}"))
-            if extra := lk - r_keys: fnd.append(AuditFinding("locale_key_parity_extra", "warning", f"Locale '{loc}' extra keys: {sorted(extra)[:10]}", location=f"locale={loc}"))
+            if miss := r_keys - lk: fnd.append(AuditFinding("locale_key_parity_missing", "error", f"Locale {loc} missing keys: {sorted(miss)[:5]}", location=f"locale={loc}"))
+            if extra := lk - r_keys: fnd.append(AuditFinding("locale_key_parity_extra", "warning", f"Locale {loc} extra keys: {sorted(extra)[:5]}", location=f"locale={loc}"))
         for k in r_keys:
-            if _BILINGUAL_SUFFIX_RE.search(k): fnd.append(AuditFinding("bilingual_key_in_reference_locale", "error", f"Reference locale contains suffixed key: '{k}'"))
+            if _BILINGUAL_SUFFIX_RE.search(k): fnd.append(AuditFinding("bilingual_key_in_reference_locale", "error", f"Suffixed key: {k}"))
         for loc, ld in dictionaries.items():
             for k, val in ld.items():
-                if not str(val).strip(): fnd.append(AuditFinding("empty_translation_value", "error", f"Locale '{loc}' empty value for '{k}'.", location=f"locale={loc}, key={k}"))
+                if not str(val).strip(): fnd.append(AuditFinding("empty_translation_value", "error", f"Locale {loc} empty value for {k}", location=f"locale={loc}, key={k}"))
                 if k in r_dict:
                     rp, lp = set(_PLACEHOLDER_RE.findall(str(r_dict[k]))), set(_PLACEHOLDER_RE.findall(str(val)))
-                    if rp != lp: fnd.append(AuditFinding("placeholder_parity_mismatch", "error", f"Locale '{loc}' key '{k}' placeholder mismatch: missing {sorted(rp - lp)}, extra {sorted(lp - rp)} (expected {sorted(rp)}).", location=f"locale={loc}, key={k}"))
+                    if rp != lp: fnd.append(AuditFinding("placeholder_parity_mismatch", "error", f"Locale '{loc}' key '{k}' placeholder mismatch: missing {sorted(rp - lp)}, extra {sorted(lp - rp)}", location=f"locale={loc}, key={k}"))
         if referenced_keys is not None:
             r_set = set(referenced_keys)
             for k in sorted(r_keys):
-                if k not in r_set: fnd.append(AuditFinding("unused_dictionary_key", "warning", f"Key '{k}' not in referenced_keys.", location=f"key={k}"))
+                if k not in r_set: fnd.append(AuditFinding("unused_dictionary_key", "warning", f"Key {k} not in referenced_keys", location=f"key={k}"))
         return PromptAuditReport(not any(x.severity == "error" for x in fnd), _estimate_tokens(str(dictionaries)), None, fnd)
 
     def audit_markdown_translation_drift(self, source_md: str, target_md: str, source_locale: str = "en", target_locale: str = "zh") -> PromptAuditReport:

@@ -58,7 +58,7 @@ export const api = {
     getMe: () => request<UserInfo>('/auth/me'),
   },
   decks: {
-    list: (p?: { skip?: number; limit?: number; source_type?: string; status?: string }) =>
+    list: (p?: { skip?: number; limit?: number; source_type?: string; status?: string; search?: string }) =>
       request<DeckListResponse>(`/decks${qs(p)}`),
     get: (id: string) => request<DeckOut>(`/decks/${id}`),
     generateTopic: (b: { topic: string; slide_count?: number; template_id?: string | null }) =>
@@ -75,6 +75,8 @@ export const api = {
       `${API_BASE}/decks/${id}/narration/audio?voice=${encodeURIComponent(voice)}&words_per_minute=${wpm}`,
     slideNarrationAudioUrl: (id: string, slideId: string, voice: string = 'narrator-en', wpm: number = 150) =>
       `${API_BASE}/decks/${id}/slides/${slideId}/narration/audio?voice=${encodeURIComponent(voice)}&words_per_minute=${wpm}`,
+    searchSlides: (q: string, limit?: number) =>
+      request<import('./types').SlideSearchResponse>(`/decks/search/slides${qs({ q, limit })}`),
   },
   evaluations: {
     list: (p?: { deck_id?: string; eval_type?: string; skip?: number; limit?: number }) =>

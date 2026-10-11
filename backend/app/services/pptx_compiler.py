@@ -9,11 +9,11 @@ from pptx.dml.color import RGBColor
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.enum.text import PP_ALIGN
 from pptx.oxml import parse_xml
-from pptx.util import Inches, Pt
+from pptx.util import Inches, Inches as _in, Pt
 from backend.app.services.layout_engine import SlideLayoutEngine
 
-SLIDE_WIDTH, SLIDE_HEIGHT = Inches(13.33), Inches(7.5)
-COLOR_TITLE, COLOR_TEXT, COLOR_HIGHLIGHT = RGBColor(0x1A, 0x1A, 0x2E), RGBColor(0x2D, 0x2D, 0x2D), RGBColor(0x0F, 0x3C, 0x78)
+SLIDE_WIDTH, SLIDE_HEIGHT = _in(13.33), _in(7.5)
+COLOR_TITLE, COLOR_TEXT, COLOR_HIGHLIGHT = RGBColor(26, 26, 46), RGBColor(45, 45, 45), RGBColor(15, 60, 120)
 CHART_MAP = {"line": XL_CHART_TYPE.LINE, "bar": XL_CHART_TYPE.BAR_CLUSTERED, "pie": XL_CHART_TYPE.PIE, "area": XL_CHART_TYPE.AREA, "doughnut": XL_CHART_TYPE.DOUGHNUT}
 _XMLNS = 'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
 _LE = SlideLayoutEngine()
@@ -39,7 +39,7 @@ def _make_slide(prs: Presentation, layout_idx: int, slide_data: dict[str, Any]) 
     slide = prs.slides.add_slide(prs.slide_layouts[layout_idx])
     if title := slide_data.get("title", ""):
         if slide.shapes.title: slide.shapes.title.text = title
-        else: _add_text_box(slide, title, Inches(1.0), Inches(0.5), Inches(12.0), Inches(1.0), 24, True, COLOR_TITLE)
+        else: _add_text_box(slide, title, _in(1.0), _in(0.5), _in(12.0), _in(1.0), 24, True, COLOR_TITLE)
     return slide
 
 def _finish(s: Any, d: dict[str, Any], trans: str = "wipe", anim: str = "wipe", shape_ids: list[int] | None = None) -> None:
@@ -54,7 +54,7 @@ def _compile_content_slide(prs: Presentation, d: dict[str, Any]) -> None:
         lines = [l.strip() for l in body.split("\n") if l.strip()]; pc = max(1, -(-len(lines) // layout.columns.count))
         for ci, cb in enumerate(layout.columns.column_boxes):
             cl = lines[ci * pc:(ci + 1) * pc]
-            if cl: _add_text_box(s, "\n".join(cl), Inches(cb.left), Inches(cb.top), Inches(cb.width), Inches(cb.height), layout.typography.body_pt, False, COLOR_TEXT)
+            if cl: _add_text_box(s, "\n".join(cl), _in(cb.left), _in(cb.top), _in(cb.width), _in(cb.height), layout.typography.body_pt, False, COLOR_TEXT)
     elif len(s.shapes.placeholders) > 1 and body: s.shapes.placeholders[1].text = body
     _finish(s, d, "wipe", "wipe")
 
@@ -64,13 +64,13 @@ def _compile_chart_slide(prs: Presentation, d: dict[str, Any]) -> None:
     cdata = ChartData(); cdata.categories = cd.get("categories", ["Cat 1", "Cat 2"])
     for series in cd.get("series", []): cdata.add_series(series.get("name", "Series"), tuple(series.get("values", [])))
     if not cd.get("series") and cd.get("data"): cdata.add_series("Series", tuple(v for _, v in cd.get("data", [])))
-    cs = s.shapes.add_chart(ct, Inches(cb.left), Inches(cb.top), Inches(cb.width), Inches(cb.height), cdata)
+    cs = s.shapes.add_chart(ct, _in(cb.left), _in(cb.top), _in(cb.width), _in(cb.height), cdata)
     _finish(s, d, "zoom", "zoom", [cs.shape_id])
 
 def _compile_table_slide(prs: Presentation, d: dict[str, Any]) -> None:
     cb = _LE.compute_slide_layout(d).content_box; s = _make_slide(prs, 5, d); td = d.get("table_data") or {}
     headers, rows = td.get("headers", []), td.get("rows", [])
-    ts = s.shapes.add_table(len(rows) + (1 if headers else 0), max(1, len(headers)), Inches(cb.left), Inches(cb.top), Inches(cb.width), Inches(cb.height))
+    ts = s.shapes.add_table(len(rows) + (1 if headers else 0), max(1, len(headers)), _in(cb.left), _in(cb.top), _in(cb.width), _in(cb.height))
     table = ts.table
     for ci, h in enumerate(headers): table.cell(0, ci).text = str(h)
     for ri, r in enumerate(rows, start=1 if headers else 0):
@@ -84,7 +84,7 @@ def _compile_kpi_slide(prs: Presentation, d: dict[str, Any]) -> None:
     ih, gap, pc = layout.extras.get("item_height_in", 0.7), layout.extras.get("row_gap_in", 0.15), max(1, -(-len(bullets) // max(1, layout.columns.count)))
     for ci, col_box in enumerate(layout.columns.column_boxes):
         for ri, b in enumerate(bullets[ci * pc:(ci + 1) * pc]):
-            _add_text_box(s, b, Inches(col_box.left), Inches(col_box.top + ri * (ih + gap)), Inches(col_box.width), Inches(ih), layout.typography.body_pt, True, COLOR_TEXT)
+            _add_text_box(s, b, _in(col_box.left), _in(col_box.top + ri * (ih + gap)), _in(col_box.width), _in(ih), layout.typography.body_pt, True, COLOR_TEXT)
     _finish(s, d, "appear", "appear")
 
 def _compile_placeholder_slide(prs: Presentation, d: dict[str, Any], trans: str, key: str, subkey: str) -> None:
@@ -96,10 +96,10 @@ def _compile_comparison_slide(prs: Presentation, d: dict[str, Any]) -> None:
     layout = _LE.compute_slide_layout(d); s = _make_slide(prs, 5, d); cmp = d.get("comparison") or {}
     if layout.columns.count == 2 and len(layout.columns.column_boxes) == 2:
         lb, rb = layout.columns.column_boxes; bpt = layout.typography.body_pt
-        if cmp.get("left_title"): _add_text_box(s, cmp["left_title"], Inches(lb.left), Inches(lb.top), Inches(lb.width), Inches(0.5), bpt + 2, True, COLOR_TITLE)
-        if cmp.get("left_body"): _add_text_box(s, cmp["left_body"], Inches(lb.left), Inches(lb.top + 0.6), Inches(lb.width), Inches(lb.height - 0.6), bpt, False, COLOR_TEXT)
-        if cmp.get("right_title"): _add_text_box(s, cmp["right_title"], Inches(rb.left), Inches(rb.top), Inches(rb.width), Inches(0.5), bpt + 2, True, COLOR_HIGHLIGHT)
-        if cmp.get("right_body"): _add_text_box(s, cmp["right_body"], Inches(rb.left), Inches(rb.top + 0.6), Inches(rb.width), Inches(rb.height - 0.6), bpt, False, COLOR_TEXT)
+        if cmp.get("left_title"): _add_text_box(s, cmp["left_title"], _in(lb.left), _in(lb.top), _in(lb.width), _in(0.5), bpt + 2, True, COLOR_TITLE)
+        if cmp.get("left_body"): _add_text_box(s, cmp["left_body"], _in(lb.left), _in(lb.top + 0.6), _in(lb.width), _in(lb.height - 0.6), bpt, False, COLOR_TEXT)
+        if cmp.get("right_title"): _add_text_box(s, cmp["right_title"], _in(rb.left), _in(rb.top), _in(rb.width), _in(0.5), bpt + 2, True, COLOR_HIGHLIGHT)
+        if cmp.get("right_body"): _add_text_box(s, cmp["right_body"], _in(rb.left), _in(rb.top + 0.6), _in(rb.width), _in(rb.height - 0.6), bpt, False, COLOR_TEXT)
     elif len(s.shapes.placeholders) > 1 and cmp.get("left_title"): s.shapes.placeholders[1].text = str(cmp["left_title"])
     _finish(s, d, "wipe", "wipe")
 

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { DeckSummary, SlideSearchResult } from '../types';
 import { api } from '../api';
-
 interface Props {
   decks: DeckSummary[]; loading: boolean; error: string | null;
   onSelectDeck: (id: string) => void; onDeleteDeck: (id: string) => void;
@@ -10,7 +9,6 @@ interface Props {
   filterSource: string; setFilterSource: (s: string) => void;
   searchQuery: string; setSearchQuery: (q: string) => void;
 }
-
 const Card = ({ title, tag1, tag2, sub, snip, onOpen, onDel }: { title: string; tag1: string; tag2?: string | string[]; sub?: string; snip?: string | null; onOpen: () => void; onDel?: () => void }) => (
   <div className="deck-card" onClick={onOpen} style={{ cursor: 'pointer' }}>
     <div className="card-top"><span className="tag">{tag1}</span>{Array.isArray(tag2) ? tag2.map(t => <span key={t} className="tag">{t}</span>) : tag2 && <span className="tag">{tag2}</span>}</div>
@@ -20,7 +18,6 @@ const Card = ({ title, tag1, tag2, sub, snip, onOpen, onDel }: { title: string; 
     {onDel && <div className="card-actions" onClick={e => e.stopPropagation()}><button className="btn-danger btn-sm" onClick={onDel}>Delete</button></div>}
   </div>
 );
-
 export const DeckDashboard: React.FC<Props> = ({
   decks, loading, error, onSelectDeck, onDeleteDeck, onCreateTopic, onCreateDoc,
   filterSource, setFilterSource, searchQuery, setSearchQuery,
@@ -30,7 +27,6 @@ export const DeckDashboard: React.FC<Props> = ({
   const [submitting, setSubmitting] = useState(false), [submitErr, setSubmitErr] = useState<string | null>(null);
   const [searchMode, setSearchMode] = useState<'deck' | 'slide'>('deck'), [results, setResults] = useState<SlideSearchResult[]>([]);
   const [searching, setSearching] = useState(false), [searchErr, setSearchErr] = useState<string | null>(null), [slideQ, setSlideQ] = useState('');
-
   const submitCreate = async (e: React.FormEvent) => {
     e.preventDefault(); setSubmitting(true); setSubmitErr(null);
     try {
@@ -40,16 +36,13 @@ export const DeckDashboard: React.FC<Props> = ({
     } catch (err: unknown) { setSubmitErr(err instanceof Error ? err.message : 'Creation failed'); }
     finally { setSubmitting(false); }
   };
-
   const searchSlides = async (e: React.FormEvent) => {
     e.preventDefault(); if (slideQ.trim().length < 2) return; setSearching(true); setSearchErr(null); setResults([]);
     try { const res = await api.decks.searchSlides(slideQ.trim(), 50); setResults(res.results); }
     catch (err: unknown) { setSearchErr(err instanceof Error ? err.message : 'Search failed'); }
     finally { setSearching(false); }
   };
-
   const filtered = decks.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) && (!filterSource || d.source_type === filterSource));
-
   return (
     <div className="dashboard-container">
       <div className="section-header"><div><h2>Presentation Decks</h2><p className="section-desc">Structured content generation with native layouts and metrics.</p></div><button className="btn-primary" onClick={() => setModal(true)}>+ New Presentation</button></div>

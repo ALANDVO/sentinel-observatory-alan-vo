@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
-
 interface Props {
   isOpen: boolean; onClose: () => void;
   onSelectPreset: (topic: string, slideCount: number) => void;
 }
-
 export const PRESETS = [
   { id: 'ai-eval', title: 'AI Safety & Alignment Evaluation', topic: 'Frontier LLM Alignment & Safety Guardrails Evaluation', slides: 8, category: 'AI Research', desc: '8-slide deck with metrics.' },
   { id: 'exec-strategy', title: 'Executive AI Strategy & Roadmap', topic: 'Enterprise AI Strategy 2026: Infrastructure & ROI', slides: 6, category: 'Executive Brief', desc: '6-slide executive brief.' },
   { id: 'ml-benchmarks', title: 'ML System Performance & Benchmarks', topic: 'Distributed Deep Learning Inference Benchmarks', slides: 10, category: 'Engineering', desc: '10-slide benchmark deck.' },
 ];
-
 export const QuickstartModal: React.FC<Props> = ({ isOpen, onClose, onSelectPreset }) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   if (!isOpen) return null;
-
   return (
     <div className="modal-overlay" data-testid="quickstart-modal" onClick={onClose}>
       <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>

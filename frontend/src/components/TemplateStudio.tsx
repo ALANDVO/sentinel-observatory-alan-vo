@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
 import { TemplateOut } from '../types';
-
 interface Props {
   templates: TemplateOut[]; loading: boolean; error: string | null;
   onUploadTemplate: (name: string, desc: string, f: File | null) => Promise<void>;
 }
-
 export const TemplateStudio: React.FC<Props> = ({ templates, loading, error, onUploadTemplate }) => {
   const [modal, setModal] = useState(false);
   const [name, setName] = useState(''), [desc, setDesc] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false), [uploadErr, setUploadErr] = useState<string | null>(null);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); if (!name.trim()) return;
     setUploading(true); setUploadErr(null);
@@ -21,7 +18,6 @@ export const TemplateStudio: React.FC<Props> = ({ templates, loading, error, onU
     } catch (err: unknown) { setUploadErr(err instanceof Error ? err.message : 'Upload failed'); }
     finally { setUploading(false); }
   };
-
   return (
     <div className="templates-container">
       <div className="section-header">

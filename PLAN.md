@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-export-pptx-smart-layout
+cross-deck-search-and-indexing
 
 ## Roadmap
 
@@ -83,8 +83,12 @@ Tests: `backend/tests/test_smart_layout.py`
 
 ### cross-deck-search-and-indexing — Cross-Deck Semantic Search and Content Indexing
 
-Status: planned
+Status: done
 
 Acceptance:
-- Enable indexed multi-attribute query filtering across generated presentations, slide transcripts, and evaluation benchmarks
+- Enable indexed multi-attribute query filtering across generated presentations, slide transcripts, and evaluation benchmarks via unified /api/search endpoint with relevance scoring, faceted results, and pagination
+
+Implementation: `backend/app/services/search_service.py`, `backend/app/api/search.py`
+
+Tests: `backend/tests/test_search.py`
 

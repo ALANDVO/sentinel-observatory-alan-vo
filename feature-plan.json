@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "export-pptx-smart-layout",
+  "current_feature": "cross-deck-search-and-indexing",
   "features": [
     {
       "id": "attribution-guard-cli",
@@ -109,12 +109,17 @@
     {
       "id": "cross-deck-search-and-indexing",
       "title": "Cross-Deck Semantic Search and Content Indexing",
-      "status": "planned",
+      "status": "done",
       "acceptance": [
-        "Enable indexed multi-attribute query filtering across generated presentations, slide transcripts, and evaluation benchmarks"
+        "Enable indexed multi-attribute query filtering across generated presentations, slide transcripts, and evaluation benchmarks via unified /api/search endpoint with relevance scoring, faceted results, and pagination"
       ],
-      "implementation": [],
-      "tests": []
+      "implementation": [
+        "backend/app/services/search_service.py",
+        "backend/app/api/search.py"
+      ],
+      "tests": [
+        "backend/tests/test_search.py"
+      ]
     }
   ]
 }

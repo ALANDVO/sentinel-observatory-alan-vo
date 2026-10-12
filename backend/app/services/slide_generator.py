@@ -1,4 +1,3 @@
-"""Slide generation service: orchestrates NLP engine to create deck + slides in DB."""
 from __future__ import annotations
 from typing import Any
 from sqlalchemy import text

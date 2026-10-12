@@ -1,4 +1,3 @@
-"""SQLAlchemy ORM model for immutable audit log."""
 from __future__ import annotations
 import uuid
 from sqlalchemy import JSON, Column, DateTime, String

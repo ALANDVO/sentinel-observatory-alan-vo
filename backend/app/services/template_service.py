@@ -1,4 +1,3 @@
-"""Template service: PPTX template registry, layout scanning, placeholder mapping."""
 from __future__ import annotations
 import io, os
 from pathlib import Path

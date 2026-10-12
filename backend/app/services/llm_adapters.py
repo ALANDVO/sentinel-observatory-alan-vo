@@ -1,4 +1,3 @@
-"""LLM adapter service supporting OpenAI-compatible, Anthropic, and Gemini APIs."""
 from __future__ import annotations
 import logging, os, re
 from typing import Any

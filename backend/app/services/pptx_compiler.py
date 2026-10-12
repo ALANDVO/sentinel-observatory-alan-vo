@@ -1,4 +1,3 @@
-"""Native PPTX compiler: shapes, transitions, animations, speaker notes, tables, charts, templates."""
 from __future__ import annotations
 import io
 from pathlib import Path

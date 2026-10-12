@@ -25,16 +25,16 @@ def test_generate_topic_deck(client: TestClient):
 def test_generate_document_deck(client: TestClient):
     doc = """
     # AI Safety Research Overview
-    
+
     ## Introduction
     AI safety is critical for ensuring systems behave as intended.
     Key concerns include alignment, robustness, and interpretability.
-    
+
     ## Technical Approaches
     - Reinforcement learning from human feedback (RLHF)
     - Constitutional AI methods
     - Formal verification techniques
-    
+
     ## Current Limitations
     Current models lack guarantees of safe behavior in all scenarios.
     Interpretability tools remain limited for large models.

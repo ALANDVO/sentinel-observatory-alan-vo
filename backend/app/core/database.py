@@ -1,4 +1,3 @@
-"""Database connection and session factory for SQLite."""
 from __future__ import annotations
 import os
 from contextlib import contextmanager
@@ -27,7 +26,7 @@ engine = _build_engine()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 class Base(DeclarativeBase): pass
 def init_db() -> None:
-    from backend.app.models import deck, evaluation, template, audit  # noqa: F401
+    from backend.app.models import deck, evaluation, template, audit
     Base.metadata.create_all(bind=engine)
 def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()

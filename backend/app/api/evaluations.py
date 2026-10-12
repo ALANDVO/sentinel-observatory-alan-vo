@@ -1,4 +1,3 @@
-"""Evaluations API: cognitive load analysis, data fidelity, attribution guard, prompt audit."""
 from __future__ import annotations
 from typing import Any
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status

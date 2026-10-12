@@ -1,4 +1,3 @@
-"""Security utilities: OIDC token verification and RBAC for Sentinel Observatory."""
 from __future__ import annotations
 import logging, os
 from enum import Enum

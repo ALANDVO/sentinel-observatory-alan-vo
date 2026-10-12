@@ -10,5 +10,23 @@ export interface UserInfo { sub: string; email: string | null; preferred_usernam
 export interface OIDCConfig { issuer: string; client_id: string; authorization_endpoint: string; token_endpoint: string; jwks_uri: string; end_session_endpoint: string; }
 export interface SlideNarrationOut { slide_id: string; position: number; transcript: string; word_count: number; duration_seconds: number; words_per_minute?: number; }
 export interface DeckNarrationOut { deck_id: string; voice: string; words_per_minute?: number; total_duration_seconds: number; total_words: number; slides: SlideNarrationOut[]; }
-export interface SlideSearchResult { deck_id: string; deck_title: string; slide_id: string; position: number; slide_type: string; title: string | null; snippet: string | null; match_fields: string[]; }
-export interface SlideSearchResponse { query: string; total: number; results: SlideSearchResult[]; }
+export interface SearchResultItem {
+  result_type: string;
+  id: string;
+  title: string;
+  snippet: string;
+  score: number;
+  metadata: Record<string, any>;
+}
+export interface SearchFacets {
+  result_type: Record<string, number>;
+  source_type: Record<string, number>;
+  slide_type: Record<string, number>;
+  eval_type: Record<string, number>;
+}
+export interface SearchResponse {
+  query: string;
+  total: number;
+  results: SearchResultItem[];
+  facets: SearchFacets;
+}

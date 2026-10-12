@@ -1,4 +1,3 @@
-"""Application configuration and environment settings for Sentinel Observatory."""
 from __future__ import annotations
 import os
 from pathlib import Path

@@ -1,4 +1,3 @@
-"""Attribution guard: validates deck source integrity with cross-platform diagnostics. Resolves #311."""
 from __future__ import annotations
 import json, os, sys
 from dataclasses import dataclass, field

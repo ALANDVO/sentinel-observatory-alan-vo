@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { DeckSummary, EvaluationOut } from '../types';
 
+const BASE = '/api';
+const evalExportJson = (id: string) => `${BASE}/evaluations/${id}/export/json`;
+const evalExportMarkdown = (id: string) => `${BASE}/evaluations/${id}/export/markdown`;
+
 interface Props { decks: DeckSummary[]; evaluations: EvaluationOut[]; loading: boolean; selectedDeckId: string | null; onSelectDeck: (id: string) => void; onRunEval: (id: string, opt: { eval_type: string; request_llm_advisory: boolean }) => Promise<void>; }
 
 const GS = (v: number | null) => v == null ? <span className="tag">N/A</span> : (() => { const p = Math.round(v * 100); return <span className={`score-badge ${v >= 0.8 ? 'badge-good' : v >= 0.6 ? 'badge-med' : 'badge-low'}`}>{p}%</span>; })();
@@ -28,6 +32,13 @@ export const ObservatoryView: React.FC<Props> = ({ decks, evaluations, loading, 
             <div className="metric-card"><span className="metric-label">Readability Grade</span><div className="metric-val">{le.readability_grade ? `Grade ${le.readability_grade.toFixed(1)}` : 'N/A'}</div></div>
             <div className="metric-card"><span className="metric-label">Attribution Guard</span><div className="metric-val"><span className={`tag ${le.attribution_pass === 'pass' ? 'badge-good' : 'badge-low'}`}>{le.attribution_pass?.toUpperCase() || 'PASS'}</span></div></div>
             {le.prompt_audit_pass && <div className="metric-card"><span className="metric-label">Prompt & Locale Audit</span><div className="metric-val"><span className={`tag ${le.prompt_audit_pass === 'pass' ? 'badge-good' : 'badge-low'}`}>{le.prompt_audit_pass === 'pass' ? 'AUDIT OK' : 'AUDIT FAIL'}</span></div></div>}
+          </div>
+          <div className="card" style={{ marginTop: '1rem' }}>
+            <div className="section-header"><h4>Export Evaluation Report</h4></div>
+            <div className="card-actions">
+              <a className="btn-secondary" href={evalExportJson(le.id)} download={`evaluation-${le.eval_type}-${le.id.slice(0,8)}.json`}>📄 Download JSON</a>
+              <a className="btn-secondary" href={evalExportMarkdown(le.id)} download={`evaluation-${le.eval_type}-${le.id.slice(0,8)}.md`}>📝 Download Markdown</a>
+            </div>
           </div>
           {le.llm_advisory && <div className="advisory-box"><h4>🤖 Advisory Insights ({le.llm_provider_used})</h4><p>{le.llm_advisory}</p></div>}
         </div>

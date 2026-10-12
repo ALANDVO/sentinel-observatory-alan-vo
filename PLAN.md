@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-cross-deck-search-and-indexing
+evaluation-report-export
 
 ## Roadmap
 
@@ -91,4 +91,19 @@ Acceptance:
 Implementation: `backend/app/services/search_service.py`, `backend/app/api/search.py`
 
 Tests: `backend/tests/test_search.py`
+
+### evaluation-report-export — Evaluation Report Export (JSON & Markdown)
+
+Status: done
+
+Acceptance:
+- Add GET /api/evaluations/{id}/export/json and GET /api/evaluations/{id}/export/markdown endpoints for downloading complete evaluation results
+- Integrate export buttons in Observatory UI with direct download links
+- Markdown reports include cognitive load summary, slide-level scores, data fidelity metrics, attribution guard diagnostics, prompt audit findings, and LLM advisory notes
+- Maintain first-party source code within 50,000–150,000 bytes budget
+- All backend and frontend tests pass
+
+Implementation: `backend/app/api/evaluations.py`, `frontend/src/components/ObservatoryView.tsx`, `frontend/src/api.ts`
+
+Tests: `backend/tests/test_evaluations.py`, `frontend/src/__tests__/app.test.tsx`
 

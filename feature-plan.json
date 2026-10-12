@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "cross-deck-search-and-indexing",
+  "current_feature": "evaluation-report-export",
   "features": [
     {
       "id": "attribution-guard-cli",
@@ -119,6 +119,27 @@
       ],
       "tests": [
         "backend/tests/test_search.py"
+      ]
+    },
+    {
+      "id": "evaluation-report-export",
+      "title": "Evaluation Report Export (JSON & Markdown)",
+      "status": "done",
+      "acceptance": [
+        "Add GET /api/evaluations/{id}/export/json and GET /api/evaluations/{id}/export/markdown endpoints for downloading complete evaluation results",
+        "Integrate export buttons in Observatory UI with direct download links",
+        "Markdown reports include cognitive load summary, slide-level scores, data fidelity metrics, attribution guard diagnostics, prompt audit findings, and LLM advisory notes",
+        "Maintain first-party source code within 50,000–150,000 bytes budget",
+        "All backend and frontend tests pass"
+      ],
+      "implementation": [
+        "backend/app/api/evaluations.py",
+        "frontend/src/components/ObservatoryView.tsx",
+        "frontend/src/api.ts"
+      ],
+      "tests": [
+        "backend/tests/test_evaluations.py",
+        "frontend/src/__tests__/app.test.tsx"
       ]
     }
   ]

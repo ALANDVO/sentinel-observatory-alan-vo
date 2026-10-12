@@ -1,6 +1,8 @@
 from __future__ import annotations
+import json
 from typing import Any
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
@@ -74,3 +76,31 @@ def run_locale_audit(body: LocaleDictAuditRequest, user: dict = _OP) -> dict:
 @router.post("/doc-translation-audit", status_code=status.HTTP_200_OK)
 def run_doc_translation_audit(body: DocTranslationAuditRequest, user: dict = _OP) -> dict:
     return _pa.audit_markdown_translation_drift(body.source_text, body.target_text, body.source_locale, body.target_locale).to_dict()
+@router.get("/{evaluation_id}/export/json")
+def export_evaluation_json(evaluation_id: str, db: Session = _DB, user: dict = _U) -> Response:
+    if not (ev := db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()): raise HTTPException(404, f"Evaluation {evaluation_id!r} not found")
+    data = {c.key: getattr(ev, c.key) for c in ev.__table__.columns}
+    data["created_at"] = ev.created_at.isoformat() if ev.created_at else None
+    return Response(content=json.dumps(data, indent=2, ensure_ascii=False), media_type="application/json", headers={"Content-Disposition": f'attachment; filename="evaluation_{ev.eval_type}_{ev.id[:8]}.json"'})
+@router.get("/{evaluation_id}/export/markdown")
+def export_evaluation_markdown(evaluation_id: str, db: Session = _DB, user: dict = _U) -> Response:
+    if not (ev := db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()): raise HTTPException(404, f"Evaluation {evaluation_id!r} not found")
+    e = ev.eval_type
+    L = [f"# Evaluation Report: {e.title()}", f"**ID:** {ev.id}", f"**Deck:** {ev.deck_id}", f"**Created:** {ev.created_at.isoformat() if ev.created_at else 'N/A'}", f"**Model:** {ev.llm_provider_used or 'N/A'}", f"**Advisory:** {'Yes' if ev.llm_advisory else 'No'}", ""]
+    if e in ("full", "cognitive_load"):
+        L += ["## Cognitive Load", f"- **Overall:** {ev.overall_cognitive_score or 'N/A'}", f"- **Density:** {ev.information_density_score or 'N/A'}", f"- **Brevity:** {ev.bullet_brevity_score or 'N/A'}", f"- **Hierarchy:** {ev.hierarchy_balance_score or 'N/A'}", f"- **Readability:** {ev.readability_grade or 'N/A'}", f"- **MECE:** {ev.mece_alignment_score or 'N/A'}", "", "## Slides"]
+        for s in (ev.raw_result or {}).get("slide_scores", []):
+            L += [f"### Slide {s.get('position','?')}: {s.get('title','Untitled')}", f"- Density: {s.get('information_density','N/A')}", f"- Brevity: {s.get('bullet_brevity','N/A')}", f"- Hierarchy: {s.get('hierarchy_balance','N/A')}", f"- Readability: {s.get('readability_grade','N/A')}", f"- Notes: {', '.join(s.get('notes',[])) or 'None'}", ""]
+        for o in (ev.raw_result or {}).get("observations", []): L.append(f"- {o}")
+        L.append("")
+    if e in ("full", "data_fidelity"):
+        L += ["## Data Fidelity", f"- **Claims:** {ev.numeric_claims_found or 'N/A'}", f"- **Verified:** {ev.claims_verified or 'N/A'}", f"- **Precision:** {ev.data_fidelity_precision or 'N/A'}", f"- **Recall:** {ev.data_fidelity_recall or 'N/A'}", ""]
+    if e in ("full", "attribution"):
+        L += ["## Attribution", f"- **Passed:** {'Yes' if ev.attribution_pass == 'pass' else 'No'}", ""]
+        for d in ev.attribution_diagnostics or []: L += [f"### {d.get('code','UNKNOWN')}: {d.get('message','')}", f"- Severity: {d.get('severity','')}", f"- Fix: {d.get('remediation','')}", ""]
+    if e in ("full", "prompt_audit"):
+        L += ["## Prompt Audit", f"- **Passed:** {'Yes' if ev.prompt_audit_pass == 'pass' else 'No'}", ""]
+        for f in ev.prompt_audit_findings or []: L.append(f"- {f.get('type','Issue')}: {f.get('message','')}")
+        L.append("")
+    if ev.llm_advisory: L += ["## LLM Advisory", ev.llm_advisory, ""]
+    return Response(content="\n".join(L), media_type="text/markdown", headers={"Content-Disposition": f'attachment; filename="evaluation_{e}_{ev.id[:8]}.md"'})

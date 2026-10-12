@@ -2,7 +2,7 @@
 
 Work in progress; not a release-readiness or successful QA claim.
 
-Version: 1.15.0
+Version: 1.16.0
 
 ## Outstanding findings
 

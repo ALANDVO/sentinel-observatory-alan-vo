@@ -58,7 +58,7 @@ class EvaluationEngine:
         return DeckCognitiveReport(did, scs, round(ad, 3), round(ab, 3), round(ah, 3), round(ar, 2), mece, ov, obs)
     def check_data_fidelity(self, slides: list[dict[str, Any]], src: list[dict[str, Any]]) -> dict[str, Any]:
         nr = re.compile(r"\b(\d[\d,]*\.?\d*)\s*(?:%|x|times|k|M|B)?\b")
-        cs: list[float] = []
+        cs = []
         for s in slides:
             for m in nr.finditer(f"{s.get('body_text') or ''} {s.get('title') or ''}"):
                 try: cs.append(float(m.group(1).replace(",", "")))

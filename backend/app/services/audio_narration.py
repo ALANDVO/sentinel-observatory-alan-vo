@@ -26,7 +26,8 @@ class AudioNarrationService:
         wpm, words = max(80, min(300, words_per_minute)), transcript.split()
         dur = max(1.5, round((max(1, len(words)) / wpm) * 60.0, 2))
         f0 = self.VF.get(voice, 175.0)
-        ns, buf = int(sample_rate * dur), io.BytesIO()
+        ns = int(sample_rate * dur)
+        buf = io.BytesIO()
         with wave.open(buf, "wb") as wf:
             wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(sample_rate)
             data = bytearray()

@@ -15,47 +15,50 @@ from backend.app.services.prompt_audit import PromptAuditService
 from backend.app.api.decks import _deck_slides
 from backend.app.api.common import get_deck_or_404, audit_log
 router = APIRouter(prefix="/evaluations", tags=["evaluations"])
-_e, _a, _p, _l = EvaluationEngine(), AttributionGuard(), PromptAuditService(), LLMAdapters()
-_D, _U, _O = Depends(get_db), Depends(get_current_user), Depends(require_role(Role.OPERATOR))
+E, A, P, L = EvaluationEngine(), AttributionGuard(), PromptAuditService(), LLMAdapters()
+D, U, O = Depends(get_db), Depends(get_current_user), Depends(require_role(Role.OPERATOR))
 class EO(BaseModel):
-    id: str; deck_id: str; eval_type: str; information_density_score: float | None = None; bullet_brevity_score: float | None = None; hierarchy_balance_score: float | None = None; readability_grade: float | None = None; mece_alignment_score: float | None = None; overall_cognitive_score: float | None = None; numeric_claims_found: float | None = None; claims_verified: float | None = None; data_fidelity_precision: float | None = None; data_fidelity_recall: float | None = None; attribution_pass: str | None = None; attribution_diagnostics: Any = None; prompt_audit_pass: str | None = None; prompt_audit_findings: Any = None; llm_advisory: str | None = None; llm_provider_used: str | None = None; raw_result: Any = None; created_at: Any = None
+    id: str; deck_id: str; eval_type: str
+    information_density_score: float | None = None; bullet_brevity_score: float | None = None
+    hierarchy_balance_score: float | None = None; readability_grade: float | None = None
+    mece_alignment_score: float | None = None; overall_cognitive_score: float | None = None
+    numeric_claims_found: float | None = None; claims_verified: float | None = None
+    data_fidelity_precision: float | None = None; data_fidelity_recall: float | None = None
+    attribution_pass: str | None = None; attribution_diagnostics: Any = None
+    prompt_audit_pass: str | None = None; prompt_audit_findings: Any = None
+    llm_advisory: str | None = None; llm_provider_used: str | None = None
+    raw_result: Any = None; created_at: Any = None
     model_config = {"from_attributes": True}
-class EL(BaseModel):
-    total: int; items: list[EO]
-class RER(BaseModel):
-    eval_type: str = "full"; source_data: list[dict] = Field(default_factory=list); model: str = "gpt-4o-mini"; request_llm_advisory: bool = False
-class PAR(BaseModel):
-    model: str = "gpt-4o-mini"; locale_keys_per_slide: list[dict] | None = None
-class LAR(BaseModel):
-    dictionaries: dict[str, dict[str, str]]; referenced_keys: list[str] | None = None
-class DAR(BaseModel):
-    source_text: str; target_text: str; source_locale: str = "en"; target_locale: str = "zh"
+class EL(BaseModel): total: int; items: list[EO]
+class RER(BaseModel): eval_type: str = "full"; source_data: list[dict] = Field(default_factory=list); model: str = "gpt-4o-mini"; request_llm_advisory: bool = False; locale_keys_per_slide: list[dict] | None = None
+class PAR(BaseModel): model: str = "gpt-4o-mini"; locale_keys_per_slide: list[dict] | None = None
+class LAR(BaseModel): dictionaries: dict[str, dict[str, str]]; referenced_keys: list[str] | None = None
+class DAR(BaseModel): source_text: str; target_text: str; source_locale: str = "en"; target_locale: str = "zh"
 @router.get("/compare")
-def compare_evaluations(ids: str = Query(...), db: Session = _D, u: dict = _U) -> dict:
-    id_list = [i.strip() for i in ids.split(",") if i.strip()]
-    if len(id_list) not in range(2, 11): raise HTTPException(400, "Provide 2 to 10 evaluation IDs")
-    evs = db.query(Evaluation).filter(Evaluation.id.in_(id_list)).all()
-    if len(evs) != len(id_list): raise HTTPException(404, f"Evaluations not found: {', '.join(set(id_list) - {e.id for e in evs})}")
+def ce(ids: str = Query(...), db: Session = D, u: dict = U) -> dict:
+    evs = [db.query(Evaluation).filter(Evaluation.id == i.strip()).first() for i in ids.split(",") if i.strip()]
+    missing = [i.strip() for i in ids.split(",") if i.strip() and not db.query(Evaluation).filter(Evaluation.id == i.strip()).first()]
+    if missing: raise HTTPException(404, f"Evaluations not found: {', '.join(missing)}")
+    if len(evs) < 2 or len(evs) > 10: raise HTTPException(400, "At least 2 and at most 10 evaluations required")
     return _bc(evs)
 @router.get("/compare/export/markdown")
-def export_comparison_markdown(ids: str = Query(...), db: Session = _D, u: dict = _U) -> Response:
-    id_list = [i.strip() for i in ids.split(",") if i.strip()]
-    if len(id_list) not in range(2, 11): raise HTTPException(400, "Provide 2 to 10 evaluation IDs")
-    evs = db.query(Evaluation).filter(Evaluation.id.in_(id_list)).all()
-    if len(evs) != len(id_list): raise HTTPException(404, f"Evaluations not found: {', '.join(set(id_list) - {e.id for e in evs})}")
+def cme(ids: str = Query(...), db: Session = D, u: dict = U) -> Response:
+    evs = [db.query(Evaluation).filter(Evaluation.id == i.strip()).first() for i in ids.split(",") if i.strip()]
+    missing = [i.strip() for i in ids.split(",") if i.strip() and not db.query(Evaluation).filter(Evaluation.id == i.strip()).first()]
+    if missing: raise HTTPException(404, f"Evaluations not found: {', '.join(missing)}")
+    if len(evs) < 2 or len(evs) > 10: raise HTTPException(400, "At least 2 and at most 10 evaluations required")
     return Response(content=_bm(evs), media_type="text/markdown", headers={"Content-Disposition": f'attachment; filename="evaluation_comparison_{evs[0].id[:8]}_et_al.md"'})
-_K = ["id","deck_id","eval_type","created_at","overall_cognitive_score","information_density_score","bullet_brevity_score","hierarchy_balance_score","readability_grade","mece_alignment_score","data_fidelity_precision","data_fidelity_recall","attribution_pass","prompt_audit_pass"]
+_K = "id deck_id eval_type created_at overall_cognitive_score information_density_score bullet_brevity_score hierarchy_balance_score readability_grade mece_alignment_score data_fidelity_precision data_fidelity_recall attribution_pass prompt_audit_pass".split()
 _M = [("overall_cognitive_score","Overall Cognitive Score"),("information_density_score","Information Density"),("bullet_brevity_score","Bullet Brevity"),("hierarchy_balance_score","Hierarchy Balance"),("readability_grade","Readability Grade (lower is better)"),("mece_alignment_score","MECE Alignment"),("data_fidelity_precision","Data Fidelity Precision"),("data_fidelity_recall","Data Fidelity Recall"),("attribution_pass","Attribution Guard"),("prompt_audit_pass","Prompt Audit")]
-def _bc(evs: list[Evaluation]) -> dict:
+def _bc(evs):
     comp = {"evaluations": [], "comparison": {}}
     for ev in evs:
         d = {k: getattr(ev, k) for k in _K}
         d["created_at"] = ev.created_at.isoformat() if ev.created_at else None
         d["llm_advisory"] = bool(ev.llm_advisory)
         comp["evaluations"].append(d)
-    numeric_keys = {"overall_cognitive_score", "information_density_score", "bullet_brevity_score", "hierarchy_balance_score", "readability_grade", "mece_alignment_score", "data_fidelity_precision", "data_fidelity_recall"}
     for key, label in _M:
-        if key not in numeric_keys: continue
+        if key in {"attribution_pass", "prompt_audit_pass"}: continue
         vals = [(e["id"], float(e[key])) for e in comp["evaluations"] if e[key] is not None]
         if vals:
             rev = key == "readability_grade"
@@ -63,7 +66,7 @@ def _bc(evs: list[Evaluation]) -> dict:
             worst = max(vals, key=lambda x: x[1]) if rev else min(vals, key=lambda x: x[1])
             comp["comparison"][key] = {"label": label, "values": dict(vals), "best": {"id": best[0], "value": best[1]}, "worst": {"id": worst[0], "value": worst[1]}, "spread": round((best[1] - worst[1]) * (-1 if rev else 1), 3)}
     return comp
-def _bm(evs: list[Evaluation]) -> str:
+def _bm(evs):
     L = ["# Evaluation Comparison Report", f"**Generated:** {datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')}", f"**Compared:** {len(evs)} evaluations", "", "## Summary Table"]
     L.append("| Metric | " + " | ".join(f"{e.id[:8]} ({e.eval_type})" for e in evs) + " |")
     L.append("| --- | " + " | ".join("---" for _ in evs) + " |")
@@ -81,81 +84,55 @@ def _bm(evs: list[Evaluation]) -> str:
         L += [f"### Evaluation `{ev.id}` (Deck: {ev.deck_id}, Type: {ev.eval_type})", f"- **Created:** {ev.created_at.isoformat() if ev.created_at else 'N/A'}"]
         if ev.overall_cognitive_score is not None:
             L += [f"- **Overall Cognitive:** {ev.overall_cognitive_score:.3f}", f"- **Density:** {ev.information_density_score or 'N/A'}", f"- **Brevity:** {ev.bullet_brevity_score or 'N/A'}", f"- **Hierarchy:** {ev.hierarchy_balance_score or 'N/A'}", f"- **Readability:** {ev.readability_grade or 'N/A'}", f"- **MECE:** {ev.mece_alignment_score or 'N/A'}"]
-        if ev.data_fidelity_precision is not None:
-            L += [f"- **Data Fidelity Precision:** {ev.data_fidelity_precision:.3f}", f"- **Data Fidelity Recall:** {ev.data_fidelity_recall:.3f}"]
+        if ev.data_fidelity_precision is not None: L += [f"- **Data Fidelity Precision:** {ev.data_fidelity_precision:.3f}", f"- **Data Fidelity Recall:** {ev.data_fidelity_recall:.3f}"]
         if ev.attribution_pass: L.append(f"- **Attribution:** {ev.attribution_pass.upper()}")
         if ev.prompt_audit_pass: L.append(f"- **Prompt Audit:** {ev.prompt_audit_pass.upper()}")
         if ev.llm_advisory: L.append(f"- **LLM Advisory:** Yes ({ev.llm_provider_used or 'unknown'})")
         L.append("")
     return "\n".join(L)
 @router.get("", response_model=EL)
-def le(did: str | None = Query(None), sk: int = Query(0, ge=0), lim: int = Query(20, ge=1, le=100), db: Session = _D, u: dict = _U) -> EL:
+def le(did: str | None = Query(None), sk: int = Query(0, ge=0), lim: int = Query(20, ge=1, le=100), db: Session = D, u: dict = U) -> EL:
     q = db.query(Evaluation)
     if did: q = q.filter(Evaluation.deck_id == did)
     return EL(total=q.count(), items=q.order_by(Evaluation.created_at.desc()).offset(sk).limit(lim).all())
 @router.post("/decks/{did}/run", response_model=EO, status_code=status.HTTP_201_CREATED)
-def re(did: str, b: RER, db: Session = _D, u: dict = _O) -> EO:
+def re(did: str, b: RER, db: Session = D, u: dict = O) -> EO:
     d = get_deck_or_404(db, did); sd = _deck_slides(d)
-    ev = Evaluation(deck_id=did, evaluator_sub=u.get("sub"), eval_type=b.eval_type)
-    if b.eval_type in ("full", "cognitive_load"):
-        r = _e.evaluate_deck(did, sd)
-        ev.information_density_score, ev.bullet_brevity_score, ev.hierarchy_balance_score, ev.readability_grade, ev.mece_alignment_score, ev.overall_cognitive_score = r.avg_information_density, r.avg_bullet_brevity, r.avg_hierarchy_balance, r.avg_readability_grade, r.mece_alignment_score, r.overall_cognitive_score
-        ev.raw_result = {"observations": r.observations, "slide_scores": [vars(s) for s in r.slide_scores]}
-    if b.eval_type in ("full", "data_fidelity"):
-        f = _e.check_data_fidelity(sd, b.source_data)
-        ev.numeric_claims_found, ev.claims_verified, ev.data_fidelity_precision, ev.data_fidelity_recall = f["numeric_claims_found"], f["claims_verified"], f["data_fidelity_precision"], f["data_fidelity_recall"]
-    if b.eval_type in ("full", "attribution"):
-        ar = _a.validate_deck_source(did, d.source_text, sd)
-        ev.attribution_pass, ev.attribution_diagnostics = ("pass" if ar.passed else "fail"), ar.to_dict()["diagnostics"]
-    if b.eval_type in ("full", "prompt_audit"):
-        pa = _p.audit_slide_content(sd, model=b.model)
-        ev.prompt_audit_pass, ev.prompt_audit_findings = ("pass" if pa.passed else "fail"), pa.to_dict()["findings"]
-    if b.request_llm_advisory:
-        ad = _l.analyze_deck(d.title, [f"{s.get('title','')}: {(s.get('body_text') or '')[:80]}" for s in sd], task="review")
-        ev.llm_advisory, ev.llm_provider_used = ad.get("advisory"), ad.get("provider")
-    db.add(ev); audit_log(db, "run_evaluation", u, "evaluation", ev.id, {"deck_id": did, "eval_type": b.eval_type}, commit=False); db.commit(); db.refresh(ev)
-    return EO.model_validate(ev)
+    ev = E.evaluate_deck(d.id, sd) if b.eval_type in {"full", "cognitive_load"} else None
+    fd = E.check_data_fidelity(sd, b.source_data) if b.eval_type in {"full", "data_fidelity"} else {"numeric_claims_found": 0, "claims_verified": 0, "data_fidelity_precision": 1.0, "data_fidelity_recall": 1.0, "unsupported_claims": []}
+    ar = A.validate_deck_source(d.id, d.source_text, sd) if b.eval_type in {"full", "attribution"} else None
+    pa = P.audit_slide_content(sd, model=b.model, locale_keys_per_slide=b.locale_keys_per_slide) if b.eval_type in {"full", "prompt_audit"} else None
+    la = None
+    if b.request_llm_advisory and L.is_configured():
+        la = L.advise(d.title, {"cognitive": ev, "fidelity": fd, "attribution": ar, "prompt": pa} if ev else {"fidelity": fd, "attribution": ar, "prompt": pa})
+    rec = Evaluation(deck_id=d.id, eval_type=b.eval_type, information_density_score=ev.avg_information_density if ev else None, bullet_brevity_score=ev.avg_bullet_brevity if ev else None, hierarchy_balance_score=ev.avg_hierarchy_balance if ev else None, readability_grade=ev.avg_readability_grade if ev else None, mece_alignment_score=ev.mece_alignment_score if ev else None, overall_cognitive_score=ev.overall_cognitive_score if ev else None, numeric_claims_found=fd["numeric_claims_found"], claims_verified=fd["claims_verified"], data_fidelity_precision=fd["data_fidelity_precision"], data_fidelity_recall=fd["data_fidelity_recall"], attribution_pass="pass" if ar and ar.passed else "fail" if ar else None, attribution_diagnostics=[vars(x) for x in ar.diagnostics] if ar else None, prompt_audit_pass="pass" if pa and pa.passed else "fail" if pa else None, prompt_audit_findings=[vars(x) for x in pa.findings] if pa else None, llm_advisory=la, llm_provider_used=L._provider if la else None, raw_result={"cognitive": ev.to_dict() if ev else None, "fidelity": fd, "attribution": ar.to_dict() if ar else None, "prompt": pa.to_dict() if pa else None})
+    db.add(rec); db.commit(); db.refresh(rec); audit_log(db, "run_evaluation", u, "evaluation", rec.id, {"eval_type": b.eval_type})
+    return EO.model_validate(rec)
 @router.get("/{eid}", response_model=EO)
-def ge(eid: str, db: Session = _D, u: dict = _U) -> EO:
+def ge(eid: str, db: Session = D, u: dict = U) -> EO:
     if not (ev := db.query(Evaluation).filter(Evaluation.id == eid).first()): raise HTTPException(404, f"Evaluation {eid!r} not found")
     return EO.model_validate(ev)
 @router.post("/prompt-audit", status_code=status.HTTP_200_OK)
-def pa(did: str = Query(...), b: PAR = Body(...), db: Session = _D, u: dict = _O) -> dict:
-    return _p.audit_slide_content(_deck_slides(get_deck_or_404(db, did)), model=b.model, locale_keys_per_slide=b.locale_keys_per_slide).to_dict()
+def pa(did: str = Query(...), b: PAR = Body(...), db: Session = D, u: dict = O) -> dict:
+    return P.audit_slide_content(_deck_slides(get_deck_or_404(db, did)), model=b.model, locale_keys_per_slide=b.locale_keys_per_slide).to_dict()
 @router.post("/locale-audit", status_code=status.HTTP_200_OK)
-def la(b: LAR, u: dict = _O) -> dict:
-    return _p.audit_locale_dictionary(b.dictionaries, referenced_keys=b.referenced_keys).to_dict()
+def la(b: LAR, u: dict = O) -> dict:
+    return P.audit_locale_dictionary(b.dictionaries, referenced_keys=b.referenced_keys).to_dict()
 @router.post("/doc-translation-audit", status_code=status.HTTP_200_OK)
-def da(b: DAR, u: dict = _O) -> dict:
-    return _p.audit_markdown_translation_drift(b.source_text, b.target_text, b.source_locale, b.target_locale).to_dict()
+def da(b: DAR, u: dict = O) -> dict:
+    return P.audit_markdown_translation_drift(b.source_text, b.target_text, b.source_locale, b.target_locale).to_dict()
 @router.get("/{eid}/export/json")
-def ej(eid: str, db: Session = _D, u: dict = _U) -> Response:
+def ej(eid: str, db: Session = D, u: dict = U) -> Response:
     if not (ev := db.query(Evaluation).filter(Evaluation.id == eid).first()): raise HTTPException(404, f"Evaluation {eid!r} not found")
-    dt = {c.key: getattr(ev, c.key) for c in ev.__table__.columns}
-    dt["created_at"] = ev.created_at.isoformat() if ev.created_at else None
-    return Response(content=json.dumps(dt, indent=2, ensure_ascii=False), media_type="application/json", headers={"Content-Disposition": f'attachment; filename="evaluation_{ev.eval_type}_{ev.id[:8]}.json"'})
+    return Response(content=json.dumps(EO.model_validate(ev).model_dump(), indent=2, ensure_ascii=False), media_type="application/json", headers={"Content-Disposition": f'attachment; filename="evaluation_{ev.eval_type}_{ev.id[:8]}.json"'})
 @router.get("/{eid}/export/markdown")
-def em(eid: str, db: Session = _D, u: dict = _U) -> Response:
+def em(eid: str, db: Session = D, u: dict = U) -> Response:
     if not (ev := db.query(Evaluation).filter(Evaluation.id == eid).first()): raise HTTPException(404, f"Evaluation {eid!r} not found")
-    e, L = ev.eval_type, [f"# Evaluation Report: {e.title()}", f"**ID:** {ev.id}", f"**Deck:** {ev.deck_id}", f"**Created:** {ev.created_at.isoformat() if ev.created_at else 'N/A'}", f"**Model:** {ev.llm_provider_used or 'N/A'}", f"**Advisory:** {'Yes' if ev.llm_advisory else 'No'}", ""]
-    def S(t: str, i: list[tuple[str, Any]]):
-        L.append(f"## {t}")
-        for k, v in i:
-            if v is not None: L.append(f"- **{k}:** {v}")
-        L.append("")
-    if e in ("full", "cognitive_load"):
-        S("Cognitive Load", [("Overall", ev.overall_cognitive_score), ("Density", ev.information_density_score), ("Brevity", ev.bullet_brevity_score), ("Hierarchy", ev.hierarchy_balance_score), ("Readability", ev.readability_grade), ("MECE", ev.mece_alignment_score)])
-        for s in (ev.raw_result or {}).get("slide_scores", []):
-            S(f"Slide {s.get('position','?')}: {s.get('title','Untitled')}", [("Density", s.get('information_density')), ("Brevity", s.get('bullet_brevity')), ("Hierarchy", s.get('hierarchy_balance')), ("Readability", s.get('readability_grade')), ("Notes", ', '.join(s.get('notes',[])) or 'None')])
-        for o in (ev.raw_result or {}).get("observations", []): L.append(f"- {o}")
-        L.append("")
-    if e in ("full", "data_fidelity"): S("Data Fidelity", [("Claims", ev.numeric_claims_found), ("Verified", ev.claims_verified), ("Precision", ev.data_fidelity_precision), ("Recall", ev.data_fidelity_recall)])
-    if e in ("full", "attribution"):
-        S("Attribution", [("Passed", "Yes" if ev.attribution_pass == "pass" else "No")])
-        for d in ev.attribution_diagnostics or []: L += [f"### {d.get('code','UNKNOWN')}: {d.get('message','')}", f"- Severity: {d.get('severity','')}", f"- Fix: {d.get('remediation','')}", ""]
-    if e in ("full", "prompt_audit"):
-        S("Prompt Audit", [("Passed", "Yes" if ev.prompt_audit_pass == "pass" else "No")])
-        for f in ev.prompt_audit_findings or []: L.append(f"- {f.get('type','Issue')}: {f.get('message','')}")
-        L.append("")
-    if ev.llm_advisory: L += ["## LLM Advisory", ev.llm_advisory, ""]
+    e = ev.eval_type; L = [f"# Evaluation Report: {e.title()}", f"**Generated:** {datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')}", f"**Deck:** {ev.deck_id}", f"**Type:** {e}", ""]
+    if ev.overall_cognitive_score is not None:
+        L += ["## Cognitive Load Summary", f"- **Overall:** {ev.overall_cognitive_score:.3f}", f"- **Density:** {ev.information_density_score:.3f}", f"- **Brevity:** {ev.bullet_brevity_score:.3f}", f"- **Hierarchy:** {ev.hierarchy_balance_score:.3f}", f"- **Readability:** {ev.readability_grade:.2f}", f"- **MECE:** {ev.mece_alignment_score:.3f}", ""]
+    if ev.data_fidelity_precision is not None: L += ["## Data Fidelity", f"- **Precision:** {ev.data_fidelity_precision:.3f}", f"- **Recall:** {ev.data_fidelity_recall:.3f}", f"- **Claims Found:** {int(ev.numeric_claims_found)}", f"- **Claims Verified:** {int(ev.claims_verified)}", ""]
+    if ev.attribution_pass: L += ["## Attribution Guard", f"- **Result:** {ev.attribution_pass.upper()}", ""]
+    if ev.prompt_audit_pass: L += ["## Prompt & Locale Audit", f"- **Result:** {ev.prompt_audit_pass.upper()}", ""]
+    if ev.llm_advisory: L += ["## LLM Advisory", f"- **Provider:** {ev.llm_provider_used or 'unknown'}", f"- **Notes:** {ev.llm_advisory}", ""]
     return Response(content="\n".join(L), media_type="text/markdown", headers={"Content-Disposition": f'attachment; filename="evaluation_{e}_{ev.id[:8]}.md"'})

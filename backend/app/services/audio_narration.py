@@ -64,10 +64,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--out", help="Optional output filepath for synthesized .wav")
     p.add_argument("--json", action="store_true", help="Output diagnostic JSON payload")
     args = p.parse_args(argv)
-    if not args.text or not args.text.strip():
-        sys.stderr.write("[AudioNarration] ERROR: --text must be non-empty.\n"); return 1
-    if not (80 <= args.wpm <= 300):
-        sys.stderr.write(f"[AudioNarration] ERROR: --wpm must be between 80 and 300 (got {args.wpm}).\n"); return 1
+    if not args.text or not args.text.strip(): sys.stderr.write("[AudioNarration] ERROR: --text must be non-empty.\n"); return 1
+    if not (80 <= args.wpm <= 300): sys.stderr.write(f"[AudioNarration] ERROR: --wpm must be between 80 and 300 (got {args.wpm}).\n"); return 1
     raw, dur = AudioNarrationService().synth(args.text, voice=args.voice, words_per_minute=args.wpm)
     wc = len(args.text.split())
     if args.out:

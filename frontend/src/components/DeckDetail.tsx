@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { DeckOut, DeckNarrationOut } from '../types';
 import { api } from '../api';
-interface Props { deck: DeckOut; onBack: () => void; onAddSlide: (id: string, s: { slide_type: string; title: string; body_text: string; speaker_notes: string }) => Promise<void>; onRunEval: (id: string) => void; }
 const V = [['narrator-en', 'Default Narrator'], ['narrator-exec', 'Executive Voice'], ['narrator-tech', 'Technical Voice'], ['narrator-calm', 'Calm Voice']] as const;
 const W = [[120, 'Deliberate (120 WPM)'], [150, 'Standard (150 WPM)'], [180, 'Brisk (180 WPM)'], [210, 'Fast (210 WPM)']] as const;
 const T = [['content', 'Content with Bullets'], ['kpi', 'Key Metric / KPI'], ['table', 'Data Table'], ['conclusion', 'Summary / Conclusion']] as const;
-export const DeckDetail: React.FC<Props> = ({ deck, onBack, onAddSlide, onRunEval }) => {
+export const DeckDetail: React.FC<{ deck: DeckOut; onBack: () => void; onAddSlide: (id: string, s: { slide_type: string; title: string; body_text: string; speaker_notes: string }) => Promise<void>; onRunEval: (id: string) => void }> = ({ deck, onBack, onAddSlide, onRunEval }) => {
   const [si, setSi] = useState(0), [sa, setSa] = useState(false);
   const [tl, setTl] = useState(''), [bd, setBd] = useState(''), [nt, setNt] = useState(''), [tp, setTp] = useState('content');
   const [ad, setAd] = useState(false), [vc, setVc] = useState('narrator-en'), [wp, setWp] = useState(150), [sy, setSy] = useState(false);

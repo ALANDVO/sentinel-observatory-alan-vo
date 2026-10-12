@@ -17,9 +17,9 @@ _LE = SlideLayoutEngine()
 def _tr(slide: Any, t: str = "fade", s: str = "med") -> None:
     t = t if t in {"fade", "push", "wipe", "cut", "zoom", "cover", "split"} else "fade"
     slide._element.append(parse_xml(f'<p:transition {_X} spd="{s}" advClick="1"><p:{t}/></p:transition>'))
-_apply_slide_transition = _tr
 def _an(slide: Any, shape_ids: list[int] | None = None, e: str = "appear") -> None:
     slide._element.append(parse_xml(f'<p:timing {_X}><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="always" nodeType="tmRoot"/></p:par></p:tnLst></p:timing>'))
+_apply_slide_transition = _tr
 _apply_slide_animations = _an
 def _tb(slide: Any, text: str, l: Any, t: Any, w: Any, h: Any, fs: int = 18, b: bool = False, c: RGBColor = CX, a: Any = PP_ALIGN.LEFT) -> Any:
     tx = slide.shapes.add_textbox(l, t, w, h); p = tx.text_frame.paragraphs[0]; p.alignment = a

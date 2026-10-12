@@ -3,7 +3,7 @@ import json, re, sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-_WIN = {"gpt-3.5-turbo": 4096, "gpt-4": 8192, "gpt-4o": 128000, "gpt-4o-mini": 128000, "claude-3-haiku-20240307": 200000, "gemini-1.5-flash": 1048576, "gemini-1.5-pro": 2097152}
+_WIN = json.loads(Path(__file__).with_name("constants.json").read_text("utf-8"))["model_windows"]
 _SUF = re.compile(r"_(?:zh|en|ja|fr|de|es|pt|ko|ar)(?:_[a-z]{2})?$", re.I)
 _CJK = re.compile(r"[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]")
 _PH = re.compile(r"\{([a-zA-Z0-9_]+)\}")

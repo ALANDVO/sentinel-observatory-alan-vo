@@ -15,8 +15,8 @@ def _item(n: str, c: str, s: Severity, m: str, p: str | None = None, rem: str | 
 class AttributionGuard:
     def validate_deck_source(self, did: str, st: str | None, sl: list[dict]) -> AttributionReport:
         d: list[DiagnosticItem] = []
-        if st is not None and len(st.strip()) < 10: d.append(_item("source_text_minimum_length", "ATTR-001", "warning", "Source text < 10 chars.", rem="Provide ≥10 chars."))
-        if not sl: d.append(_item("slide_count_non_zero", "ATTR-002", "error", "Deck contains zero slides.", rem="Provide ≥1 slide."))
+        if st is not None and len(st.strip()) < 10: d.append(_item("source_text_minimum_length", "ATTR-001", "warning", "Source text < 10 chars.", rem="Provide >=10 chars."))
+        if not sl: d.append(_item("slide_count_non_zero", "ATTR-002", "error", "Deck contains zero slides.", rem="Provide >=1 slide."))
         pos = [s.get("position", -1) for s in sl]
         if sorted(pos) != list(range(len(sl))): d.append(_item("slide_position_continuity", "ATTR-003", "error", f"Slide positions not contiguous: {sorted(pos)}.", rem="Order positions."))
         if bt := [s.get("id", f"pos-{s.get('position', '?')}") for s in sl if s.get("slide_type") == "title" and not (s.get("title") or "").strip()]:

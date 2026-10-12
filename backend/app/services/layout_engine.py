@@ -26,8 +26,7 @@ def _wc(t: str | None) -> int: return len((t or "").split())
 def _lines(t: str | None) -> list[str]: return [l.strip() for l in (t or "").split("\n") if l.strip()]
 def _density(n: int) -> str: return "sparse" if n < 40 else "medium" if n < 100 else "dense"
 _density_class = _density
-def _sf(base: int, w: int, lo: int, hi: int) -> int:
-    return max(lo, min(hi, round(lo + (1.0 - min(1.0, max(0.0, math.log1p(max(0, w - 40)) / math.log1p(160)))) * (hi - lo))))
+def _sf(base: int, w: int, lo: int, hi: int) -> int: return max(lo, min(hi, round(lo + (1.0 - min(1.0, max(0.0, math.log1p(max(0, w - 40)) / math.log1p(160)))) * (hi - lo))))
 _scale_font = _sf
 def _split(n: int) -> int: return 3 if n >= 7 else 2 if n >= 4 else 1
 _split_columns = _split
@@ -35,8 +34,7 @@ def _cols(cnt: int, gutter: float = 0.25) -> list[BoundingBox]:
     cw = (_CONTENT_W - gutter * (cnt - 1)) / cnt
     return [BoundingBox(round(_CL + i * (cw + gutter), 4), _CT, round(cw, 4), _CONTENT_H) for i in range(cnt)]
 _column_boxes = _cols
-def _mk(st: str, tot: int, nc: int, g: float, tp: TypographySpec, ex: dict) -> SlideLayout:
-    return SlideLayout(st, _density(tot), tp, BoundingBox(_CL, _CT, _CONTENT_W, _CONTENT_H), ColumnLayout(nc, _cols(nc, g), g), ex)
+def _mk(st: str, tot: int, nc: int, g: float, tp: TypographySpec, ex: dict) -> SlideLayout: return SlideLayout(st, _density(tot), tp, BoundingBox(_CL, _CT, _CONTENT_W, _CONTENT_H), ColumnLayout(nc, _cols(nc, g), g), ex)
 def _lt(d: dict) -> SlideLayout:
     tot = _wc(d.get("title")) + _wc(d.get("body_text")) + _wc(d.get("subtitle"))
     th = round(_CONTENT_H * 0.42, 3)
@@ -69,10 +67,8 @@ def _lp(d: dict) -> SlideLayout:
     return _mk("process", tot, min(5, max(1, n)), 0.2, TypographySpec(_sf(24, tot, _FT_MIN, 30), _sf(16, n * 8, _F_MIN, 20)), {"step_count": n, "flow_direction": "horizontal"})
 _FNS = {"title": _lt, "content": _lc, "kpi": _lk, "comparison": _lcmp, "chart": _lch, "table": _ltb, "process": _lp}
 class SlideLayoutEngine:
-    def compute_slide_layout(self, slide_data: dict[str, Any]) -> SlideLayout:
-        return _FNS.get((slide_data.get("slide_type") or "content").lower(), _lc)(slide_data)
-    def compute_deck_layouts(self, slides: list[dict[str, Any]]) -> list[SlideLayout]:
-        return [self.compute_slide_layout(s) for s in sorted(slides, key=lambda s: s.get("position", 0))]
+    def compute_slide_layout(self, slide_data: dict[str, Any]) -> SlideLayout: return _FNS.get((slide_data.get("slide_type") or "content").lower(), _lc)(slide_data)
+    def compute_deck_layouts(self, slides: list[dict[str, Any]]) -> list[SlideLayout]: return [self.compute_slide_layout(s) for s in sorted(slides, key=lambda s: s.get("position", 0))]
     def layout_summary(self, slides: list[dict[str, Any]]) -> dict[str, Any]:
         layouts = self.compute_deck_layouts(slides)
         dc, cc, fts = {}, {}, []

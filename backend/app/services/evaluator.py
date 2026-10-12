@@ -6,11 +6,13 @@ from backend.app.services.nlp_engine import flesch_kincaid_grade, _tokenize
 class SlideScore:
     slide_id: str; position: int; title: str; information_density: float; bullet_brevity: float
     hierarchy_balance: float; readability_grade: float; notes: list[str] = field(default_factory=list)
+    def to_dict(self) -> dict: return {"slide_id": self.slide_id, "position": self.position, "title": self.title, "information_density": self.information_density, "bullet_brevity": self.bullet_brevity, "hierarchy_balance": self.hierarchy_balance, "readability_grade": self.readability_grade, "notes": self.notes}
 @dataclass
 class DeckCognitiveReport:
     deck_id: str; slide_scores: list[SlideScore]; avg_information_density: float
     avg_bullet_brevity: float; avg_hierarchy_balance: float; avg_readability_grade: float
     mece_alignment_score: float; overall_cognitive_score: float; observations: list[str] = field(default_factory=list)
+    def to_dict(self) -> dict: return {"deck_id": self.deck_id, "slide_scores": [s.to_dict() for s in self.slide_scores], "avg_information_density": self.avg_information_density, "avg_bullet_brevity": self.avg_bullet_brevity, "avg_hierarchy_balance": self.avg_hierarchy_balance, "avg_readability_grade": self.avg_readability_grade, "mece_alignment_score": self.mece_alignment_score, "overall_cognitive_score": self.overall_cognitive_score, "observations": self.observations}
 def _id(b: str) -> float:
     if not b: return 1.0
     bs = re.findall(r"(?:^[\*\-•]\s+.+|(?<=[.!?])\s+[A-Z])", b, re.MULTILINE)

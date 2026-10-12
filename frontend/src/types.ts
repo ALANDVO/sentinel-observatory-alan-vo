@@ -30,3 +30,31 @@ export interface SearchResponse {
   results: SearchResultItem[];
   facets: SearchFacets;
 }
+export interface EvaluationComparisonItem {
+  id: string;
+  deck_id: string;
+  eval_type: string;
+  created_at: string | null;
+  overall_cognitive_score: number | null;
+  information_density_score: number | null;
+  bullet_brevity_score: number | null;
+  hierarchy_balance_score: number | null;
+  readability_grade: number | null;
+  mece_alignment_score: number | null;
+  data_fidelity_precision: number | null;
+  data_fidelity_recall: number | null;
+  attribution_pass: string | null;
+  prompt_audit_pass: string | null;
+  llm_advisory: boolean;
+}
+export interface EvaluationComparisonMetric {
+  label: string;
+  values: Record<string, number>;
+  best: { id: string; value: number };
+  worst: { id: string; value: number };
+  spread: number;
+}
+export interface EvaluationComparisonResponse {
+  evaluations: EvaluationComparisonItem[];
+  comparison: Record<string, EvaluationComparisonMetric>;
+}

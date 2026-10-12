@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-evaluation-report-export
+evaluation-comparison
 
 ## Roadmap
 
@@ -100,6 +100,21 @@ Acceptance:
 - Add GET /api/evaluations/{id}/export/json and GET /api/evaluations/{id}/export/markdown endpoints for downloading complete evaluation results
 - Integrate export buttons in Observatory UI with direct download links
 - Markdown reports include cognitive load summary, slide-level scores, data fidelity metrics, attribution guard diagnostics, prompt audit findings, and LLM advisory notes
+- Maintain first-party source code within 50,000–150,000 bytes budget
+- All backend and frontend tests pass
+
+Implementation: `backend/app/api/evaluations.py`, `frontend/src/components/ObservatoryView.tsx`, `frontend/src/api.ts`
+
+Tests: `backend/tests/test_evaluations.py`, `frontend/src/__tests__/app.test.tsx`
+
+### evaluation-comparison — Evaluation Comparison API and Comparative Export
+
+Status: done
+
+Acceptance:
+- Add GET /api/evaluations/compare endpoint accepting multiple evaluation IDs with comparative metrics table
+- Add GET /api/evaluations/compare/export/markdown endpoint for downloadable comparative report
+- Integrate comparison UI in ObservatoryView with multi-select and comparative metrics display
 - Maintain first-party source code within 50,000–150,000 bytes budget
 - All backend and frontend tests pass
 

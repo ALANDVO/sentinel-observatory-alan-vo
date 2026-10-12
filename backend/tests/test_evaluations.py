@@ -128,3 +128,67 @@ def test_locale_audit_detects_missing_keys(client: TestClient):
     assert data["passed"] is False
     rules = [f["rule"] for f in data["findings"]]
     assert "locale_key_parity_missing" in rules
+
+
+def test_compare_evaluations(client: TestClient):
+    deck_id_1 = _create_deck(client, "First deck for comparison")
+    deck_id_2 = _create_deck(client, "Second deck for comparison")
+    # Create evaluations for both decks
+    r1 = client.post(f"/api/evaluations/decks/{deck_id_1}/run", json={"eval_type": "full"})
+    assert r1.status_code == 201
+    eid1 = r1.json()["id"]
+    r2 = client.post(f"/api/evaluations/decks/{deck_id_2}/run", json={"eval_type": "full"})
+    assert r2.status_code == 201
+    eid2 = r2.json()["id"]
+    # Compare them
+    resp = client.get(f"/api/evaluations/compare?ids={eid1},{eid2}")
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert "evaluations" in data
+    assert "comparison" in data
+    assert len(data["evaluations"]) == 2
+    assert set(e["id"] for e in data["evaluations"]) == {eid1, eid2}
+    # Check comparison metrics exist
+    assert "overall_cognitive_score" in data["comparison"]
+    assert "best" in data["comparison"]["overall_cognitive_score"]
+    assert "worst" in data["comparison"]["overall_cognitive_score"]
+
+
+def test_compare_evaluations_invalid_count(client: TestClient):
+    deck_id = _create_deck(client)
+    r = client.post(f"/api/evaluations/decks/{deck_id}/run", json={"eval_type": "full"})
+    eid = r.json()["id"]
+    # Single ID should fail
+    resp = client.get(f"/api/evaluations/compare?ids={eid}")
+    assert resp.status_code == 400
+    # Too many IDs should fail
+    many_ids = ",".join([eid] * 11)
+    resp = client.get(f"/api/evaluations/compare?ids={many_ids}")
+    assert resp.status_code == 400
+
+
+def test_compare_evaluations_nonexistent(client: TestClient):
+    deck_id = _create_deck(client)
+    r = client.post(f"/api/evaluations/decks/{deck_id}/run", json={"eval_type": "full"})
+    eid = r.json()["id"]
+    # Mix of valid and invalid
+    resp = client.get(f"/api/evaluations/compare?ids={eid},nonexistent-id-123")
+    assert resp.status_code == 404
+
+
+def test_export_comparison_markdown(client: TestClient):
+    deck_id_1 = _create_deck(client, "First deck for markdown export")
+    deck_id_2 = _create_deck(client, "Second deck for markdown export")
+    r1 = client.post(f"/api/evaluations/decks/{deck_id_1}/run", json={"eval_type": "full"})
+    eid1 = r1.json()["id"]
+    r2 = client.post(f"/api/evaluations/decks/{deck_id_2}/run", json={"eval_type": "full"})
+    eid2 = r2.json()["id"]
+    resp = client.get(f"/api/evaluations/compare/export/markdown?ids={eid1},{eid2}")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "text/markdown; charset=utf-8"
+    content = resp.text
+    assert "# Evaluation Comparison Report" in content
+    assert "Summary Table" in content
+    assert "Per-Evaluation Details" in content
+    assert eid1[:8] in content
+    assert eid2[:8] in content

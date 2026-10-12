@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from typing import Any
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from fastapi.responses import Response
@@ -29,6 +30,64 @@ class LAR(BaseModel):
     dictionaries: dict[str, dict[str, str]]; referenced_keys: list[str] | None = None
 class DAR(BaseModel):
     source_text: str; target_text: str; source_locale: str = "en"; target_locale: str = "zh"
+@router.get("/compare")
+def compare_evaluations(ids: str = Query(...), db: Session = _D, u: dict = _U) -> dict:
+    id_list = [i.strip() for i in ids.split(",") if i.strip()]
+    if len(id_list) not in range(2, 11): raise HTTPException(400, "Provide 2 to 10 evaluation IDs")
+    evs = db.query(Evaluation).filter(Evaluation.id.in_(id_list)).all()
+    if len(evs) != len(id_list): raise HTTPException(404, f"Evaluations not found: {', '.join(set(id_list) - {e.id for e in evs})}")
+    return _bc(evs)
+@router.get("/compare/export/markdown")
+def export_comparison_markdown(ids: str = Query(...), db: Session = _D, u: dict = _U) -> Response:
+    id_list = [i.strip() for i in ids.split(",") if i.strip()]
+    if len(id_list) not in range(2, 11): raise HTTPException(400, "Provide 2 to 10 evaluation IDs")
+    evs = db.query(Evaluation).filter(Evaluation.id.in_(id_list)).all()
+    if len(evs) != len(id_list): raise HTTPException(404, f"Evaluations not found: {', '.join(set(id_list) - {e.id for e in evs})}")
+    return Response(content=_bm(evs), media_type="text/markdown", headers={"Content-Disposition": f'attachment; filename="evaluation_comparison_{evs[0].id[:8]}_et_al.md"'})
+_K = ["id","deck_id","eval_type","created_at","overall_cognitive_score","information_density_score","bullet_brevity_score","hierarchy_balance_score","readability_grade","mece_alignment_score","data_fidelity_precision","data_fidelity_recall","attribution_pass","prompt_audit_pass"]
+_M = [("overall_cognitive_score","Overall Cognitive Score"),("information_density_score","Information Density"),("bullet_brevity_score","Bullet Brevity"),("hierarchy_balance_score","Hierarchy Balance"),("readability_grade","Readability Grade (lower is better)"),("mece_alignment_score","MECE Alignment"),("data_fidelity_precision","Data Fidelity Precision"),("data_fidelity_recall","Data Fidelity Recall")]
+_MD = [("overall_cognitive_score","Overall Cognitive Score"),("information_density_score","Information Density"),("bullet_brevity_score","Bullet Brevity"),("hierarchy_balance_score","Hierarchy Balance"),("readability_grade","Readability Grade"),("mece_alignment_score","MECE Alignment"),("data_fidelity_precision","Data Fidelity Precision"),("data_fidelity_recall","Data Fidelity Recall"),("attribution_pass","Attribution Guard"),("prompt_audit_pass","Prompt Audit")]
+def _bc(evs: list[Evaluation]) -> dict:
+    comp = {"evaluations": [], "comparison": {}}
+    for ev in evs:
+        d = {k: getattr(ev, k) for k in _K}
+        d["created_at"] = ev.created_at.isoformat() if ev.created_at else None
+        d["llm_advisory"] = bool(ev.llm_advisory)
+        comp["evaluations"].append(d)
+    for key, label in _M:
+        vals = [(e["id"], e[key]) for e in comp["evaluations"] if e[key] is not None]
+        if vals:
+            rev = key == "readability_grade"
+            best = min(vals, key=lambda x: x[1]) if rev else max(vals, key=lambda x: x[1])
+            worst = max(vals, key=lambda x: x[1]) if rev else min(vals, key=lambda x: x[1])
+            comp["comparison"][key] = {"label": label, "values": dict(vals), "best": {"id": best[0], "value": best[1]}, "worst": {"id": worst[0], "value": worst[1]}, "spread": round((best[1] - worst[1]) * (-1 if rev else 1), 3)}
+    return comp
+def _bm(evs: list[Evaluation]) -> str:
+    L = ["# Evaluation Comparison Report", f"**Generated:** {datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')}", f"**Compared:** {len(evs)} evaluations", "", "## Summary Table"]
+    L.append("| Metric | " + " | ".join(f"{e.id[:8]} ({e.eval_type})" for e in evs) + " |")
+    L.append("| --- | " + " | ".join("---" for _ in evs) + " |")
+    for key, label in _MD:
+        row = [label]
+        for e in evs:
+            val = getattr(e, key)
+            if val is None: row.append("N/A")
+            elif isinstance(val, float): row.append(f"{val:.3f}")
+            elif isinstance(val, bool): row.append("Yes" if val else "No")
+            else: row.append(str(val))
+        L.append("| " + " | ".join(row) + " |")
+    L.append(""); L.append("## Per-Evaluation Details")
+    for ev in evs:
+        L.append(f"### Evaluation `{ev.id}` (Deck: {ev.deck_id}, Type: {ev.eval_type})")
+        L.append(f"- **Created:** {ev.created_at.isoformat() if ev.created_at else 'N/A'}")
+        if ev.overall_cognitive_score is not None:
+            L += [f"- **Overall Cognitive:** {ev.overall_cognitive_score:.3f}", f"- **Density:** {ev.information_density_score or 'N/A'}", f"- **Brevity:** {ev.bullet_brevity_score or 'N/A'}", f"- **Hierarchy:** {ev.hierarchy_balance_score or 'N/A'}", f"- **Readability:** {ev.readability_grade or 'N/A'}", f"- **MECE:** {ev.mece_alignment_score or 'N/A'}"]
+        if ev.data_fidelity_precision is not None:
+            L += [f"- **Data Fidelity Precision:** {ev.data_fidelity_precision:.3f}", f"- **Data Fidelity Recall:** {ev.data_fidelity_recall:.3f}"]
+        if ev.attribution_pass: L.append(f"- **Attribution:** {ev.attribution_pass.upper()}")
+        if ev.prompt_audit_pass: L.append(f"- **Prompt Audit:** {ev.prompt_audit_pass.upper()}")
+        if ev.llm_advisory: L.append(f"- **LLM Advisory:** Yes ({ev.llm_provider_used or 'unknown'})")
+        L.append("")
+    return "\n".join(L)
 @router.get("", response_model=EL)
 def le(did: str | None = Query(None), sk: int = Query(0, ge=0), lim: int = Query(20, ge=1, le=100), db: Session = _D, u: dict = _U) -> EL:
     q = db.query(Evaluation)

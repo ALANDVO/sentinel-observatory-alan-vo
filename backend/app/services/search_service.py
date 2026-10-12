@@ -8,13 +8,11 @@ from sqlalchemy import or_
 from backend.app.models.deck import Deck, Slide
 from backend.app.models.evaluation import Evaluation
 from backend.app.models.audit import AuditLog
-
 @dataclass
 class R: result_type: str; id: str; title: str; snippet: str; score: float; metadata: dict = field(default_factory=dict)
 def d(x: R): return {"result_type": x.result_type, "id": x.id, "title": x.title, "snippet": x.snippet, "score": round(x.score, 3), "metadata": x.metadata}
 @dataclass
 class SR: query: str; total: int; results: list[R]; facets: dict = field(default_factory=dict)
-
 class SS:
     TB, BB, SL = 3.0, 1.5, 200
     T = re.compile(r"[a-z0-9]+")

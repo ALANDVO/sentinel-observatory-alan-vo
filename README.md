@@ -3,7 +3,7 @@
 > Work in progress. This checkpoint may be incomplete or fail tests. See PLAN.md and STATUS.md before use.
 
 
-Current version: `1.15.0`.
+Current version: `1.19.0`.
 
 Sentinel Observatory turns documents or topics into native PowerPoint decks through deterministic AI/ML workflows — evaluating cognitive load, data grounding, and structural quality before compiling real `.pptx` files with native shapes, charts, and speaker notes.
 
@@ -27,6 +27,7 @@ Sentinel Observatory turns documents or topics into native PowerPoint decks thro
 | **Native PPTX Export** | Compile to real `.pptx` with smart auto-alignment, dynamic bounding boxes, typography scaling, native bar/line/pie charts, styled tables, slide transitions, and speaker notes |
 | **Template Studio** | Register custom `.pptx` templates; scan master slides, placeholder layouts, and theme palettes |
 | **Cross-Deck Search** | Unified `/api/search` endpoint with relevance scoring, faceted filtering across decks, slides, evaluations, and pagination |
+| **Evaluation Comparison** | Side-by-side multi-evaluation comparison with metrics table, best/worst/spread analysis, and Markdown export |
 
 ## Architecture
 
@@ -168,6 +169,8 @@ cd frontend && npm run build
 | `POST` | `/api/evaluations/{id}/attribution` | Bearer (viewer) | Attribution guard check |
 | `POST` | `/api/evaluations/{id}/prompt-audit` | Bearer (viewer) | Prompt budget and locale audit |
 | `POST` | `/api/evaluations/doc-translation-audit` | Bearer (viewer) | Markdown doc translation drift audit |
+| `GET` | `/api/evaluations/compare` | Bearer (viewer) | Compare multiple evaluations side-by-side |
+| `GET` | `/api/evaluations/compare/export/markdown` | Bearer (viewer) | Export comparative Markdown report |
 | `GET` | `/api/templates` | Bearer (viewer) | List slide templates |
 | `GET` | `/api/search` | Bearer (viewer) | Unified cross-deck search with filters, facets, and pagination |
 

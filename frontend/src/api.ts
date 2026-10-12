@@ -1,7 +1,7 @@
 import {
   DeckListResponse, DeckOut, DeckNarrationOut, EvaluationListResponse, EvaluationOut,
   OIDCConfig, SlideOut, TemplateListResponse, TemplateOut, UserInfo,
-  SearchResponse,
+  SearchResponse, EvaluationComparisonResponse,
 } from './types';
 let _token: string | null = null;
 export const setAccessToken = (t: string | null) => { _token = t; };
@@ -58,6 +58,8 @@ export const api = {
     run: (id: string, b: { eval_type: string; model?: string; request_llm_advisory?: boolean }) => jpost(`/evaluations/decks/${id}/run`, b) as Promise<EvaluationOut>,
     exportJson: (id: string) => `${BASE}/evaluations/${id}/export/json`,
     exportMarkdown: (id: string) => `${BASE}/evaluations/${id}/export/markdown`,
+    compare: (ids: string[]) => req<EvaluationComparisonResponse>(`/evaluations/compare?ids=${ids.join(',')}`),
+    exportComparisonMarkdown: (ids: string[]) => `${BASE}/evaluations/compare/export/markdown?ids=${ids.join(',')}`,
   },
   templates: {
     list: (p?: { skip?: number; limit?: number }) => req<TemplateListResponse>(`/templates${qs(p)}`),

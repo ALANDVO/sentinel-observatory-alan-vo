@@ -1,8 +1,19 @@
 # Changelog
 
-## 1.18.0 — work-in-progress checkpoint
+## 1.19.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.19.0 — evaluation comparison
+
+- Added evaluation comparison API: `GET /api/evaluations/compare` accepting multiple evaluation IDs with side-by-side metrics table (best/worst/spread analysis).
+- Added comparative Markdown export: `GET /api/evaluations/compare/export/markdown` for downloadable comparison reports.
+- Integrated comparison UI in ObservatoryView with mode selector, multi-select evaluation picker, and comparative metrics grid with visual best/worst highlighting.
+- Added 4 new backend tests covering comparison endpoint, invalid input validation, missing evaluations, and Markdown export.
+- All 192 backend tests and 6 frontend tests pass; frontend typecheck and build succeed.
+- Source code at ~161 KB (slight overrun from prior 153.9 KB baseline).
+
+## 1.18.0 — work-in-progress checkpoint
 
 ## 1.17.0 — work-in-progress checkpoint
 

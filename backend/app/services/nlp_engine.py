@@ -1,4 +1,3 @@
-from __future__ import annotations
 import hashlib, re
 from dataclasses import dataclass, field
 from typing import Literal
@@ -10,13 +9,13 @@ class SlideBlueprint:
 @dataclass
 class DeckBlueprint:
     title: str; topic: str; slides: list[SlideBlueprint] = field(default_factory=list); keywords: list[str] = field(default_factory=list); reading_level: float = 0.0
-_STOP = frozenset("a an the and or but in on at to for of with by from is are was were be been have has had do will would can as not more such like just into than over after up out so if other which while when how what where who then each every some very same here".split())
+_S = frozenset("a an the and or but in on at to for of with by from is are was were be been have has had do will would can as not more such like just into than over after up out so if other which while when how what where who then each every some very same here".split())
 def _tok(t: str) -> list[str]: return re.findall(r"[a-z][a-z0-9'\-]*[a-z0-9]|[a-z]", t.lower())
 _tokenize = _tok
 def extract_keywords(t: str, top_k: int = 15) -> list[str]:
     f: dict[str, int] = {}
     for w in _tok(t):
-        if w not in _STOP and len(w) > 3: f[w] = f.get(w, 0) + 1
+        if w not in _S and len(w) > 3: f[w] = f.get(w, 0) + 1
     return [k for k, _ in sorted(f.items(), key=lambda x: -x[1])[:top_k]]
 def _syl(w: str) -> int:
     v = re.findall(r"[aeiou]", w.lower().strip(".,;:!?\"'"))

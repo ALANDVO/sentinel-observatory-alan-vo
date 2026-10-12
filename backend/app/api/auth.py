@@ -1,4 +1,3 @@
-from __future__ import annotations
 import os
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel

@@ -1,4 +1,3 @@
-from __future__ import annotations
 import json
 from typing import Any
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
@@ -7,84 +6,78 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.core.security import Role, get_current_user, require_role
-from backend.app.models.deck import Deck
 from backend.app.models.evaluation import Evaluation
 from backend.app.services.attribution_guard import AttributionGuard
-from backend.app.services.audit_service import AuditService
 from backend.app.services.evaluator import EvaluationEngine
 from backend.app.services.llm_adapters import LLMAdapters
 from backend.app.services.prompt_audit import PromptAuditService
 from backend.app.api.decks import _deck_slides
+from backend.app.api.common import get_deck_or_404, audit_log
 router = APIRouter(prefix="/evaluations", tags=["evaluations"])
-_eng, _att, _pa, _llm, _audit = EvaluationEngine(), AttributionGuard(), PromptAuditService(), LLMAdapters(), AuditService()
-_DB, _U, _OP = Depends(get_db), Depends(get_current_user), Depends(require_role(Role.OPERATOR))
-class EvaluationOut(BaseModel):
+_e, _a, _p, _l = EvaluationEngine(), AttributionGuard(), PromptAuditService(), LLMAdapters()
+_D, _U, _O = Depends(get_db), Depends(get_current_user), Depends(require_role(Role.OPERATOR))
+class EO(BaseModel):
     id: str; deck_id: str; eval_type: str; information_density_score: float | None = None; bullet_brevity_score: float | None = None; hierarchy_balance_score: float | None = None; readability_grade: float | None = None; mece_alignment_score: float | None = None; overall_cognitive_score: float | None = None; numeric_claims_found: float | None = None; claims_verified: float | None = None; data_fidelity_precision: float | None = None; data_fidelity_recall: float | None = None; attribution_pass: str | None = None; attribution_diagnostics: Any = None; prompt_audit_pass: str | None = None; prompt_audit_findings: Any = None; llm_advisory: str | None = None; llm_provider_used: str | None = None; raw_result: Any = None; created_at: Any = None
     model_config = {"from_attributes": True}
-class EvaluationListResponse(BaseModel):
-    total: int; items: list[EvaluationOut]
-class RunEvaluationRequest(BaseModel):
+class EL(BaseModel):
+    total: int; items: list[EO]
+class RER(BaseModel):
     eval_type: str = "full"; source_data: list[dict] = Field(default_factory=list); model: str = "gpt-4o-mini"; request_llm_advisory: bool = False
-class PromptAuditRequest(BaseModel):
+class PAR(BaseModel):
     model: str = "gpt-4o-mini"; locale_keys_per_slide: list[dict] | None = None
-class LocaleDictAuditRequest(BaseModel):
+class LAR(BaseModel):
     dictionaries: dict[str, dict[str, str]]; referenced_keys: list[str] | None = None
-class DocTranslationAuditRequest(BaseModel):
+class DAR(BaseModel):
     source_text: str; target_text: str; source_locale: str = "en"; target_locale: str = "zh"
-def _gdd(db: Session, did: str) -> Deck:
-    if not (d := db.query(Deck).filter(Deck.id == did).first()): raise HTTPException(404, f"Deck {did!r} not found")
-    return d
-@router.get("", response_model=EvaluationListResponse)
-def list_evaluations(deck_id: str | None = Query(None), skip: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=100), db: Session = _DB, user: dict = _U) -> EvaluationListResponse:
+@router.get("", response_model=EL)
+def le(did: str | None = Query(None), sk: int = Query(0, ge=0), lim: int = Query(20, ge=1, le=100), db: Session = _D, u: dict = _U) -> EL:
     q = db.query(Evaluation)
-    if deck_id: q = q.filter(Evaluation.deck_id == deck_id)
-    return EvaluationListResponse(total=q.count(), items=q.order_by(Evaluation.created_at.desc()).offset(skip).limit(limit).all())
-@router.post("/decks/{deck_id}/run", response_model=EvaluationOut, status_code=status.HTTP_201_CREATED)
-def run_evaluation(deck_id: str, body: RunEvaluationRequest, db: Session = _DB, user: dict = _OP) -> EvaluationOut:
-    deck = _gdd(db, deck_id); sd = _deck_slides(deck)
-    ev = Evaluation(deck_id=deck_id, evaluator_sub=user.get("sub"), eval_type=body.eval_type)
-    if body.eval_type in ("full", "cognitive_load"):
-        r = _eng.evaluate_deck(deck_id, sd)
+    if did: q = q.filter(Evaluation.deck_id == did)
+    return EL(total=q.count(), items=q.order_by(Evaluation.created_at.desc()).offset(sk).limit(lim).all())
+@router.post("/decks/{did}/run", response_model=EO, status_code=status.HTTP_201_CREATED)
+def re(did: str, b: RER, db: Session = _D, u: dict = _O) -> EO:
+    d = get_deck_or_404(db, did); sd = _deck_slides(d)
+    ev = Evaluation(deck_id=did, evaluator_sub=u.get("sub"), eval_type=b.eval_type)
+    if b.eval_type in ("full", "cognitive_load"):
+        r = _e.evaluate_deck(did, sd)
         ev.information_density_score, ev.bullet_brevity_score, ev.hierarchy_balance_score, ev.readability_grade, ev.mece_alignment_score, ev.overall_cognitive_score = r.avg_information_density, r.avg_bullet_brevity, r.avg_hierarchy_balance, r.avg_readability_grade, r.mece_alignment_score, r.overall_cognitive_score
         ev.raw_result = {"observations": r.observations, "slide_scores": [vars(s) for s in r.slide_scores]}
-    if body.eval_type in ("full", "data_fidelity"):
-        f = _eng.check_data_fidelity(sd, body.source_data)
+    if b.eval_type in ("full", "data_fidelity"):
+        f = _e.check_data_fidelity(sd, b.source_data)
         ev.numeric_claims_found, ev.claims_verified, ev.data_fidelity_precision, ev.data_fidelity_recall = f["numeric_claims_found"], f["claims_verified"], f["data_fidelity_precision"], f["data_fidelity_recall"]
-    if body.eval_type in ("full", "attribution"):
-        att = _att.validate_deck_source(deck_id, deck.source_text, sd)
-        ev.attribution_pass, ev.attribution_diagnostics = ("pass" if att.passed else "fail"), att.to_dict()["diagnostics"]
-    if body.eval_type in ("full", "prompt_audit"):
-        pa = _pa.audit_slide_content(sd, model=body.model)
+    if b.eval_type in ("full", "attribution"):
+        ar = _a.validate_deck_source(did, d.source_text, sd)
+        ev.attribution_pass, ev.attribution_diagnostics = ("pass" if ar.passed else "fail"), ar.to_dict()["diagnostics"]
+    if b.eval_type in ("full", "prompt_audit"):
+        pa = _p.audit_slide_content(sd, model=b.model)
         ev.prompt_audit_pass, ev.prompt_audit_findings = ("pass" if pa.passed else "fail"), pa.to_dict()["findings"]
-    if body.request_llm_advisory:
-        adv = _llm.analyze_deck(deck.title, [f"{s.get('title', '')}: {(s.get('body_text') or '')[:80]}" for s in sd], task="review")
-        ev.llm_advisory, ev.llm_provider_used = adv.get("advisory"), adv.get("provider")
-    db.add(ev)
-    _audit.log(db, "run_evaluation", actor_sub=user.get("sub"), actor_email=user.get("email"), resource_type="evaluation", resource_id=ev.id, detail={"deck_id": deck_id, "eval_type": body.eval_type})
-    db.commit(); db.refresh(ev)
-    return EvaluationOut.model_validate(ev)
-@router.get("/{evaluation_id}", response_model=EvaluationOut)
-def get_evaluation(evaluation_id: str, db: Session = _DB, user: dict = _U) -> EvaluationOut:
-    if not (ev := db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()): raise HTTPException(404, f"Evaluation {evaluation_id!r} not found")
-    return EvaluationOut.model_validate(ev)
+    if b.request_llm_advisory:
+        ad = _l.analyze_deck(d.title, [f"{s.get('title','')}: {(s.get('body_text') or '')[:80]}" for s in sd], task="review")
+        ev.llm_advisory, ev.llm_provider_used = ad.get("advisory"), ad.get("provider")
+    db.add(ev); audit_log(db, "run_evaluation", u, "evaluation", ev.id, {"deck_id": did, "eval_type": b.eval_type}, commit=False); db.commit(); db.refresh(ev)
+    return EO.model_validate(ev)
+@router.get("/{eid}", response_model=EO)
+def ge(eid: str, db: Session = _D, u: dict = _U) -> EO:
+    if not (ev := db.query(Evaluation).filter(Evaluation.id == eid).first()): raise HTTPException(404, f"Evaluation {eid!r} not found")
+    return EO.model_validate(ev)
 @router.post("/prompt-audit", status_code=status.HTTP_200_OK)
-def run_prompt_audit(deck_id: str = Query(...), body: PromptAuditRequest = Body(...), db: Session = _DB, user: dict = _OP) -> dict:
-    return _pa.audit_slide_content(_deck_slides(_gdd(db, deck_id)), model=body.model, locale_keys_per_slide=body.locale_keys_per_slide).to_dict()
+def pa(did: str = Query(...), b: PAR = Body(...), db: Session = _D, u: dict = _O) -> dict:
+    return _p.audit_slide_content(_deck_slides(get_deck_or_404(db, did)), model=b.model, locale_keys_per_slide=b.locale_keys_per_slide).to_dict()
 @router.post("/locale-audit", status_code=status.HTTP_200_OK)
-def run_locale_audit(body: LocaleDictAuditRequest, user: dict = _OP) -> dict:
-    return _pa.audit_locale_dictionary(body.dictionaries, referenced_keys=body.referenced_keys).to_dict()
+def la(b: LAR, u: dict = _O) -> dict:
+    return _p.audit_locale_dictionary(b.dictionaries, referenced_keys=b.referenced_keys).to_dict()
 @router.post("/doc-translation-audit", status_code=status.HTTP_200_OK)
-def run_doc_translation_audit(body: DocTranslationAuditRequest, user: dict = _OP) -> dict:
-    return _pa.audit_markdown_translation_drift(body.source_text, body.target_text, body.source_locale, body.target_locale).to_dict()
-@router.get("/{evaluation_id}/export/json")
-def export_evaluation_json(evaluation_id: str, db: Session = _DB, user: dict = _U) -> Response:
-    if not (ev := db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()): raise HTTPException(404, f"Evaluation {evaluation_id!r} not found")
-    data = {c.key: getattr(ev, c.key) for c in ev.__table__.columns}
-    data["created_at"] = ev.created_at.isoformat() if ev.created_at else None
-    return Response(content=json.dumps(data, indent=2, ensure_ascii=False), media_type="application/json", headers={"Content-Disposition": f'attachment; filename="evaluation_{ev.eval_type}_{ev.id[:8]}.json"'})
-@router.get("/{evaluation_id}/export/markdown")
-def export_evaluation_markdown(evaluation_id: str, db: Session = _DB, user: dict = _U) -> Response:
-    if not (ev := db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()): raise HTTPException(404, f"Evaluation {evaluation_id!r} not found")
+def da(b: DAR, u: dict = _O) -> dict:
+    return _p.audit_markdown_translation_drift(b.source_text, b.target_text, b.source_locale, b.target_locale).to_dict()
+@router.get("/{eid}/export/json")
+def ej(eid: str, db: Session = _D, u: dict = _U) -> Response:
+    if not (ev := db.query(Evaluation).filter(Evaluation.id == eid).first()): raise HTTPException(404, f"Evaluation {eid!r} not found")
+    dt = {c.key: getattr(ev, c.key) for c in ev.__table__.columns}
+    dt["created_at"] = ev.created_at.isoformat() if ev.created_at else None
+    return Response(content=json.dumps(dt, indent=2, ensure_ascii=False), media_type="application/json", headers={"Content-Disposition": f'attachment; filename="evaluation_{ev.eval_type}_{ev.id[:8]}.json"'})
+@router.get("/{eid}/export/markdown")
+def em(eid: str, db: Session = _D, u: dict = _U) -> Response:
+    if not (ev := db.query(Evaluation).filter(Evaluation.id == eid).first()): raise HTTPException(404, f"Evaluation {eid!r} not found")
     e = ev.eval_type
     L = [f"# Evaluation Report: {e.title()}", f"**ID:** {ev.id}", f"**Deck:** {ev.deck_id}", f"**Created:** {ev.created_at.isoformat() if ev.created_at else 'N/A'}", f"**Model:** {ev.llm_provider_used or 'N/A'}", f"**Advisory:** {'Yes' if ev.llm_advisory else 'No'}", ""]
     if e in ("full", "cognitive_load"):

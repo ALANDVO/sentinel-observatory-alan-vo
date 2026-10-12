@@ -1,11 +1,10 @@
-from __future__ import annotations
 import logging, os, re
 from typing import Any
 import httpx
 logger = logging.getLogger(__name__)
-_REDACT_PATTERNS = [re.compile(r"(sk-[A-Za-z0-9]{20,})", re.I), re.compile(r"(Bearer\s+[A-Za-z0-9\-_\.]{20,})", re.I), re.compile(r"(key=[A-Za-z0-9\-_]{20,})", re.I)]
+_R = [re.compile(r"(sk-[A-Za-z0-9]{20,})", re.I), re.compile(r"(Bearer\s+[A-Za-z0-9\-_\.]{20,})", re.I), re.compile(r"(key=[A-Za-z0-9\-_]{20,})", re.I)]
 def _redact(msg: str) -> str:
-    for pat in _REDACT_PATTERNS: msg = pat.sub("[REDACTED]", msg)
+    for pat in _R: msg = pat.sub("[REDACTED]", msg)
     return msg
 _redact_error = _redact
 class LLMAdapterError(Exception): pass

@@ -1,4 +1,3 @@
-from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from typing import Any
@@ -12,25 +11,22 @@ class DeckCognitiveReport:
     deck_id: str; slide_scores: list[SlideScore]; avg_information_density: float
     avg_bullet_brevity: float; avg_hierarchy_balance: float; avg_readability_grade: float
     mece_alignment_score: float; overall_cognitive_score: float; observations: list[str] = field(default_factory=list)
-def _id(body: str) -> float:
-    if not body: return 1.0
-    bs = re.findall(r"(?:^[\*\-•]\s+.+|(?<=[.!?])\s+[A-Z])", body, re.MULTILINE)
-    bc, cc = max(1, len(bs)), len(body)
+def _id(b: str) -> float:
+    if not b: return 1.0
+    bs = re.findall(r"(?:^[\*\-•]\s+.+|(?<=[.!?])\s+[A-Z])", b, re.MULTILINE)
+    bc, cc = max(1, len(bs)), len(b)
     return round(max(0.0, min(1.0, max(0.0, 1.0 - (cc - 600) / 1200 - max(0, bc - 7) * 0.05) if cc > 600 or bc > 7 else 1.0 - (cc / 1200))), 3)
-_information_density = _id
-def _bb(body: str) -> float:
-    if not body: return 1.0
-    b = [m.group(1) for m in re.compile(r"^[\*\-•]\s+(.+)", re.MULTILINE).finditer(body)]
-    items = b if b else re.split(r"(?<=[.!?])\s+", body)
+def _bb(b: str) -> float:
+    if not b: return 1.0
+    items = [m.group(1) for m in re.compile(r"^[\*\-•]\s+(.+)", re.MULTILINE).finditer(b)]
+    items = items if items else re.split(r"(?<=[.!?])\s+", b)
     if not items: return 1.0
     return round(max(0.0, 1.0 - max(0.0, sum(len(_tokenize(it)) for it in items) / len(items) - 10) / 20.0), 3)
-_bullet_brevity = _bb
 def _hb(t: str, b: str) -> float:
     tw, bw = len(_tokenize(t)), len(_tokenize(b)) if b else 0
     if bw == 0: return 0.8
     r = tw / (tw + bw)
     return round(r / 0.05 if r < 0.05 else max(0.0, 1.0 - (r - 0.25) / 0.75), 3) if not (0.05 <= r <= 0.25) else 1.0
-_hierarchy_balance = _hb
 def _ma(ts: list[str]) -> float:
     if len(ts) < 2: return 1.0
     ov = []
@@ -38,9 +34,12 @@ def _ma(ts: list[str]) -> float:
         s1, s2 = set(_tokenize(ts[i])), set(_tokenize(ts[i + 1]))
         ov.append(1.0 if not s1 or not s2 else 1.0 - len(s1 & s2) / len(s1 | s2))
     return round(sum(ov) / len(ov), 3)
+_information_density = _id
+_bullet_brevity = _bb
+_hierarchy_balance = _hb
 _mece_alignment = _ma
 class EvaluationEngine:
-    def evaluate_deck(self, deck_id: str, slides: list[dict[str, Any]]) -> DeckCognitiveReport:
+    def evaluate_deck(self, did: str, slides: list[dict[str, Any]]) -> DeckCognitiveReport:
         scs, ts = [], []
         for s in slides:
             sid, pos = s.get("id", ""), s.get("position", 0)
@@ -49,19 +48,19 @@ class EvaluationEngine:
             ns = [m for c, m in ((d < 0.5, "High information density; consider splitting slide."), (br < 0.5, "Bullets are verbose; aim for ≤ 10 words."), (r > 12, "Reading grade level is high; simplify language.")) if c]
             scs.append(SlideScore(sid, pos, t, d, br, h, r, ns))
             ts.append(t)
-        if not scs: return DeckCognitiveReport(deck_id, [], 1.0, 1.0, 1.0, 0.0, 1.0, 1.0)
+        if not scs: return DeckCognitiveReport(did, [], 1.0, 1.0, 1.0, 0.0, 1.0, 1.0)
         n = len(scs)
         ad, ab, ah, ar = sum(s.information_density for s in scs) / n, sum(s.bullet_brevity for s in scs) / n, sum(s.hierarchy_balance for s in scs) / n, sum(s.readability_grade for s in scs) / n
         mece = _ma(ts)
         rs = max(0.0, 1.0 - max(0.0, ar - 6.0) / 12.0)
         ov = round(0.25 * ad + 0.25 * ab + 0.15 * ah + 0.20 * rs + 0.15 * mece, 3)
         obs = [m for c, m in ((ad < 0.6, "Overall deck information density is high; consider reducing slide content."), (mece < 0.6, "Slide titles show topic overlap; review MECE structure."), (ar > 14, "Deck reading level is graduate-level; simplify for wider audiences.")) if c]
-        return DeckCognitiveReport(deck_id, scs, round(ad, 3), round(ab, 3), round(ah, 3), round(ar, 2), mece, ov, obs)
+        return DeckCognitiveReport(did, scs, round(ad, 3), round(ab, 3), round(ah, 3), round(ar, 2), mece, ov, obs)
     def check_data_fidelity(self, slides: list[dict[str, Any]], src: list[dict[str, Any]]) -> dict[str, Any]:
-        num_re = re.compile(r"\b(\d[\d,]*\.?\d*)\s*(?:%|x|times|k|M|B)?\b")
+        nr = re.compile(r"\b(\d[\d,]*\.?\d*)\s*(?:%|x|times|k|M|B)?\b")
         cs: list[float] = []
         for s in slides:
-            for m in num_re.finditer(f"{s.get('body_text') or ''} {s.get('title') or ''}"):
+            for m in nr.finditer(f"{s.get('body_text') or ''} {s.get('title') or ''}"):
                 try: cs.append(float(m.group(1).replace(",", "")))
                 except ValueError: pass
         def _o(f: int, v: int, p: float, r: float, u: list) -> dict[str, Any]:

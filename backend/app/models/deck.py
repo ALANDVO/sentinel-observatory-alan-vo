@@ -4,7 +4,6 @@ import uuid
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from backend.app.core.database import Base, now_utc
-
 class Deck(Base):
     __tablename__ = "decks"
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -18,7 +17,6 @@ class Deck(Base):
     slides = relationship("Slide", back_populates="deck", cascade="all, delete-orphan", order_by="Slide.position")
     evaluations = relationship("Evaluation", back_populates="deck", cascade="all, delete-orphan")
     template = relationship("Template", back_populates="decks")
-
 class Slide(Base):
     __tablename__ = "slides"
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))

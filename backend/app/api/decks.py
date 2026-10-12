@@ -43,15 +43,16 @@ class SlideSearchResponse(BaseModel):
 def _get_deck(db: Session, did: str) -> Deck:
     if not (d := db.query(Deck).filter(Deck.id == did).first()): raise HTTPException(404, f"Deck {did!r} not found")
     return d
-def _safe_fn(t: str, ext: str) -> str:
+def _sf(t: str, ext: str) -> str:
     return "".join(c if c.isalnum() or c in " -_" else "_" for c in t)[:50] + f".{ext}"
-def _deck_slides(d: Deck) -> list[dict]:
+def _ds(d: Deck) -> list[dict]:
     return [{"id": s.id, "position": s.position, "slide_type": s.slide_type, "title": s.title, "body_text": s.body_text, "bullets": (s.body_text or "").split("\n") if s.body_text else [], "speaker_notes": s.speaker_notes, "chart_data": s.chart_data, "table_data": s.table_data} for s in sorted(d.slides, key=lambda x: x.position)]
-def _audit_log(db: Session, act: str, u: dict, did: str, det: dict) -> None:
+_deck_slides = _ds
+def _al(db: Session, act: str, u: dict, did: str, det: dict) -> None:
     _audit.log(db, act, actor_sub=u.get("sub"), actor_email=u.get("email"), resource_type="deck", resource_id=did, detail=det); db.commit()
-def _finish_deck_create(db: Session, deck: Deck, user: dict, src: str) -> DeckOut:
-    _audit_log(db, "create_deck", user, deck.id, {"source_type": src}); db.refresh(deck); return DeckOut.model_validate(deck)
-def _wav_res(b: bytes, fn: str) -> Response:
+def _fc(db: Session, deck: Deck, user: dict, src: str) -> DeckOut:
+    _al(db, "create_deck", user, deck.id, {"source_type": src}); db.refresh(deck); return DeckOut.model_validate(deck)
+def _wr(b: bytes, fn: str) -> Response:
     return Response(content=b, media_type="audio/wav", headers={"Content-Disposition": f'inline; filename="{fn}"'})
 @router.get("/search/slides", response_model=SlideSearchResponse)
 def search_slides(q: str = Query(..., min_length=2, max_length=200), limit: int = Query(20, ge=1, le=50), db: Session = _DB, user: dict = _U) -> SlideSearchResponse:
@@ -68,16 +69,16 @@ def list_decks(skip: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=100),
     return DeckListResponse(total=q.count(), items=q.order_by(Deck.created_at.desc()).offset(skip).limit(limit).all())
 @router.post("/generate/topic", response_model=DeckOut, status_code=status.HTTP_201_CREATED)
 def generate_from_topic(body: GenerateTopicRequest, db: Session = _DB, user: dict = _OP) -> DeckOut:
-    return _finish_deck_create(db, _gen.generate_from_topic(db, body.topic, author_sub=user.get("sub"), template_id=body.template_id, slide_count=body.slide_count), user, "topic")
+    return _fc(db, _gen.generate_from_topic(db, body.topic, author_sub=user.get("sub"), template_id=body.template_id, slide_count=body.slide_count), user, "topic")
 @router.post("/generate/document", response_model=DeckOut, status_code=status.HTTP_201_CREATED)
 def generate_from_document(body: GenerateDocumentRequest, db: Session = _DB, user: dict = _OP) -> DeckOut:
-    return _finish_deck_create(db, _gen.generate_from_document(db, body.text, author_sub=user.get("sub"), template_id=body.template_id, slide_count=body.slide_count), user, "document")
+    return _fc(db, _gen.generate_from_document(db, body.text, author_sub=user.get("sub"), template_id=body.template_id, slide_count=body.slide_count), user, "document")
 @router.get("/{deck_id}", response_model=DeckOut)
 def get_deck(deck_id: str, db: Session = _DB, user: dict = _U) -> DeckOut:
     return DeckOut.model_validate(_get_deck(db, deck_id))
 @router.delete("/{deck_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_deck(deck_id: str, db: Session = _DB, user: dict = _ADM) -> None:
-    deck = _get_deck(db, deck_id); _audit_log(db, "delete_deck", user, deck_id, {"title": deck.title}); db.delete(deck); db.commit()
+    deck = _get_deck(db, deck_id); _al(db, "delete_deck", user, deck_id, {"title": deck.title}); db.delete(deck); db.commit()
 @router.post("/{deck_id}/slides", response_model=SlideOut, status_code=status.HTTP_201_CREATED)
 def add_slide(deck_id: str, body: SlideCreateRequest, db: Session = _DB, user: dict = _OP) -> SlideOut:
     _get_deck(db, deck_id)
@@ -91,25 +92,25 @@ def update_slide(deck_id: str, slide_id: str, body: SlideUpdateRequest, db: Sess
 def export_pptx(deck_id: str, db: Session = _DB, user: dict = _VW) -> Response:
     deck = _get_deck(db, deck_id)
     tp = str(p) if deck.template_id and (tmpl := _tmpls.get_template(db, deck.template_id)) and (p := _tmpls.get_template_filepath(tmpl)) else None
-    raw = _comp.compile_deck(deck.title, _deck_slides(deck), template_path=tp)
-    _audit_log(db, "export_deck", user, deck_id, {"format": "pptx"})
-    return Response(content=raw, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", headers={"Content-Disposition": f'attachment; filename="{_safe_fn(deck.title, "pptx")}"'})
+    raw = _comp.compile_deck(deck.title, _ds(deck), template_path=tp)
+    _al(db, "export_deck", user, deck_id, {"format": "pptx"})
+    return Response(content=raw, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", headers={"Content-Disposition": f'attachment; filename="{_sf(deck.title, "pptx")}"'})
 @router.post("/{deck_id}/narration/synthesize")
 def synthesize_narration(deck_id: str, voice: str = Query("narrator-en"), words_per_minute: int = Query(150, ge=80, le=300), db: Session = _DB, user: dict = _OP) -> dict:
     deck = _get_deck(db, deck_id)
-    n = _narr.synthesize_deck(deck_id, _deck_slides(deck), voice=voice, words_per_minute=words_per_minute)
+    n = _narr.synthesize_deck(deck_id, _ds(deck), voice=voice, words_per_minute=words_per_minute)
     info = {"voice": voice, "words_per_minute": words_per_minute, "total_duration_seconds": n.total_duration_seconds, "total_words": n.total_words, "slide_count": len(n.slides)}
-    deck.meta = {**(deck.meta or {}), "narration": info}; _audit_log(db, "synthesize_narration", user, deck_id, {"voice": voice, "words_per_minute": words_per_minute})
+    deck.meta = {**(deck.meta or {}), "narration": info}; _al(db, "synthesize_narration", user, deck_id, {"voice": voice, "words_per_minute": words_per_minute})
     return {"deck_id": deck_id, **info, "slides": [{"slide_id": s.slide_id, "position": s.position, "transcript": s.transcript, "word_count": s.word_count, "duration_seconds": s.duration_seconds, "words_per_minute": s.words_per_minute} for s in n.slides]}
 @router.get("/{deck_id}/narration/audio")
 def get_deck_narration_audio(deck_id: str, voice: str = Query("narrator-en"), words_per_minute: int = Query(150, ge=80, le=300), db: Session = _DB, user: dict = _VW) -> Response:
     deck = _get_deck(db, deck_id)
-    return _wav_res(_narr.synthesize_deck(deck_id, _deck_slides(deck), voice=voice, words_per_minute=words_per_minute).audio_bytes, _safe_fn(deck.title, "wav"))
+    return _wr(_narr.synthesize_deck(deck_id, _ds(deck), voice=voice, words_per_minute=words_per_minute).audio_bytes, _sf(deck.title, "wav"))
 @router.get("/{deck_id}/slides/{slide_id}/narration/audio")
 def get_slide_narration_audio(deck_id: str, slide_id: str, voice: str = Query("narrator-en"), words_per_minute: int = Query(150, ge=80, le=300), db: Session = _DB, user: dict = _VW) -> Response:
     _get_deck(db, deck_id)
     if not (s := db.query(Slide).filter(Slide.id == slide_id, Slide.deck_id == deck_id).first()): raise HTTPException(404, f"Slide {slide_id!r} not found in deck {deck_id!r}")
-    return _wav_res(_narr.synthesize_slide(s.id, s.position, s.speaker_notes, s.title, voice, words_per_minute=words_per_minute).audio_bytes, f"slide_{s.position}_narration.wav")
+    return _wr(_narr.synthesize_slide(s.id, s.position, s.speaker_notes, s.title, voice, words_per_minute=words_per_minute).audio_bytes, f"slide_{s.position}_narration.wav")
 @router.get("/{deck_id}/layout")
 def get_deck_layout(deck_id: str, db: Session = _DB, user: dict = _VW) -> dict:
-    return _layout.layout_summary(_deck_slides(_get_deck(db, deck_id)))
+    return _layout.layout_summary(_ds(_get_deck(db, deck_id)))

@@ -5,7 +5,6 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from backend.app.models.deck import Deck, Slide
 from backend.app.services.nlp_engine import NLPEngine
-
 class SlideGeneratorService:
     def __init__(self): self._nlp = NLPEngine()
     def generate_from_topic(self, db: Session, topic: str, author_sub: str | None = None, template_id: str | None = None, slide_count: int = 8) -> Deck:

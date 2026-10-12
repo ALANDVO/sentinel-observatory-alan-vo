@@ -4,7 +4,6 @@ import uuid
 from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 from backend.app.core.database import Base, now_utc
-
 class Evaluation(Base):
     __tablename__ = "evaluations"
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))

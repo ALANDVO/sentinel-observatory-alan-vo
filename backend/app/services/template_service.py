@@ -4,10 +4,8 @@ import io, os
 from pathlib import Path
 from sqlalchemy.orm import Session
 from backend.app.models.template import Template
-
 class TemplateService:
     TEMPLATES_DIR = os.getenv("TEMPLATES_DIR", "./data/templates")
-
     def create_template(self, db: Session, name: str, description: str | None, author_sub: str | None, pptx_bytes: bytes | None = None) -> Template:
         layout_names, placeholder_map, slide_count, filename, theme_color = [], {}, 0, None, None
         if pptx_bytes:
@@ -17,7 +15,6 @@ class TemplateService:
                      placeholder_map=placeholder_map, is_builtin="false")
         db.add(t); db.commit(); db.refresh(t)
         return t
-
     def _scan_pptx(self, name: str, pptx_bytes: bytes) -> tuple[list[str], dict[str, list], int, str | None, str | None]:
         try:
             from pptx import Presentation
@@ -31,24 +28,19 @@ class TemplateService:
             return layout_names, placeholder_map, len(prs.slides), None, filename
         except Exception as exc:
             raise ValueError(f"Failed to parse PPTX template: {exc}") from exc
-
     def list_templates(self, db: Session, skip: int = 0, limit: int = 50) -> tuple[list[Template], int]:
         return db.query(Template).offset(skip).limit(limit).all(), db.query(Template).count()
-
     def get_template(self, db: Session, template_id: str) -> Template | None:
         return db.query(Template).filter(Template.id == template_id).first()
-
     def get_template_filepath(self, template: Template) -> Path | None:
         if not template or not template.filename: return None
         p = Path(self.TEMPLATES_DIR) / template.filename
         return p if p.is_file() else None
-
     def delete_template(self, db: Session, template_id: str) -> bool:
         if not (t := self.get_template(db, template_id)): return False
         if t.filename: Path(self.TEMPLATES_DIR, t.filename).unlink(missing_ok=True)
         db.delete(t); db.commit()
         return True
-
     def seed_builtin_templates(self, db: Session) -> None:
         if db.query(Template).filter(Template.is_builtin == "true").count() > 0: return
         for n, d, c, l in [

@@ -3,7 +3,6 @@ from __future__ import annotations
 import uuid
 from sqlalchemy import JSON, Column, DateTime, String
 from backend.app.core.database import Base, now_utc
-
 class AuditLog(Base):
     __tablename__ = "audit_log"
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))

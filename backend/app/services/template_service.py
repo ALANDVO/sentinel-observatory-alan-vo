@@ -1,4 +1,3 @@
-from __future__ import annotations
 import io, os
 from pathlib import Path
 from sqlalchemy.orm import Session

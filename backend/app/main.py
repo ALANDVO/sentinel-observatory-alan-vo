@@ -1,5 +1,4 @@
 """Sentinel Observatory FastAPI application entry point."""
-from __future__ import annotations
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

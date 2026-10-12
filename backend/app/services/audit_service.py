@@ -1,5 +1,4 @@
 """Audit service for immutable mutation logging."""
-from __future__ import annotations
 from typing import Any
 from sqlalchemy.orm import Session
 from backend.app.models.audit import AuditLog

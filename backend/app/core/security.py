@@ -1,4 +1,3 @@
-from __future__ import annotations
 import logging, os
 from enum import Enum
 from typing import Any

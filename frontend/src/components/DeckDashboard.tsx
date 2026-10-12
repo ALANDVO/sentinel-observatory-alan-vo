@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { DeckSummary } from '../types';
 import { api } from '../api';
-
 interface Props { decks: DeckSummary[]; loading: boolean; error: string | null; onSelectDeck: (id: string) => void; onDeleteDeck: (id: string) => void; onCreateTopic: (t: string, c: number) => Promise<void>; onCreateDoc: (d: string, c: number) => Promise<void>; filterSource: string; setFilterSource: (s: string) => void; searchQuery: string; setSearchQuery: (q: string) => void; }
-
 const Card = ({ t, t1, t2, s, sn, oo, od }: { t: string; t1: string; t2?: string | string[]; s?: string; sn?: string | null; oo: () => void; od?: () => void }) => (
   <div className="deck-card" onClick={oo} style={{ cursor: 'pointer' }}>
     <div className="card-top"><span className="tag">{t1}</span>{Array.isArray(t2) ? t2.map(x => <span key={x} className="tag">{x}</span>) : t2 && <span className="tag">{t2}</span>}</div>
@@ -13,7 +11,6 @@ const Card = ({ t, t1, t2, s, sn, oo, od }: { t: string; t1: string; t2?: string
     {od && <div className="card-actions" onClick={e => e.stopPropagation()}><button className="btn-danger btn-sm" onClick={od}>Delete</button></div>}
   </div>
 );
-
 export const DeckDashboard: React.FC<Props> = ({
   decks, loading, error, onSelectDeck, onDeleteDeck, onCreateTopic, onCreateDoc,
   filterSource, setFilterSource, searchQuery, setSearchQuery,

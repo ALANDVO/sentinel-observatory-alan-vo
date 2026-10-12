@@ -1,4 +1,3 @@
-from __future__ import annotations
 import uuid
 from sqlalchemy import JSON, Column, DateTime, String
 from backend.app.core.database import Base, now_utc

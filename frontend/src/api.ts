@@ -1,6 +1,7 @@
 import {
   DeckListResponse, DeckOut, DeckNarrationOut, EvaluationListResponse, EvaluationOut,
-  OIDCConfig, SlideOut, SlideSearchResponse, TemplateListResponse, TemplateOut, UserInfo,
+  OIDCConfig, SlideOut, TemplateListResponse, TemplateOut, UserInfo,
+  SearchResponse,
 } from './types';
 let _token: string | null = null;
 export const setAccessToken = (t: string | null) => { _token = t; };
@@ -47,7 +48,9 @@ export const api = {
     synthesizeNarration: (id: string, v = 'narrator-en', w = 150) => req<DeckNarrationOut>(`/decks/${id}/narration/synthesize?voice=${encodeURIComponent(v)}&words_per_minute=${w}`, { method: 'POST' }),
     narrationAudioUrl: (id: string, v = 'narrator-en', w = 150) => _nUrl(`/decks/${id}/narration/audio`, v, w),
     slideNarrationAudioUrl: (id: string, sId: string, v = 'narrator-en', w = 150) => _nUrl(`/decks/${id}/slides/${sId}/narration/audio`, v, w),
-    searchSlides: (q: string, limit?: number) => req<SlideSearchResponse>(`/decks/search/slides${qs({ q, limit })}`),
+  },
+  search: {
+    unified: (params: { q: string; limit?: number; offset?: number; source_type?: string; status?: string; deck_id?: string; slide_type?: string; eval_type?: string; author_sub?: string }) => req<SearchResponse>(`/search${qs(params)}`),
   },
   evaluations: {
     list: (p?: { deck_id?: string; eval_type?: string; skip?: number; limit?: number }) => req<EvaluationListResponse>(`/evaluations${qs(p)}`),

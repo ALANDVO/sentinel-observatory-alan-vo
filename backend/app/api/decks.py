@@ -1,4 +1,3 @@
-"""Decks API: create, list, read, delete, compile to PPTX, export, and audio narration."""
 from __future__ import annotations
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status

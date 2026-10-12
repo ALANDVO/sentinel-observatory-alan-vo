@@ -1,4 +1,3 @@
-"""Auth endpoint: OIDC discovery and PKCE flow metadata."""
 from __future__ import annotations
 import os
 from fastapi import APIRouter, Depends, status

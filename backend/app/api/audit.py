@@ -1,4 +1,3 @@
-"""Audit log API: read-only access to the immutable audit trail."""
 from __future__ import annotations
 from typing import Any
 from fastapi import APIRouter, Depends, Query

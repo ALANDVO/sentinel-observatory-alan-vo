@@ -5,11 +5,12 @@ import { Navbar } from './components/Navbar';
 import { DeckDashboard } from './components/DeckDashboard';
 import { DeckDetail } from './components/DeckDetail';
 import { ObservatoryView } from './components/ObservatoryView';
+import { SearchView } from './components/SearchView';
 import { TemplateStudio } from './components/TemplateStudio';
 import { QuickstartModal } from './components/QuickstartModal';
 export const App: React.FC = () => {
   const [user, setUser] = useState<UserInfo | null>(null);
-  const [tab, setTab] = useState<'decks' | 'observatory' | 'templates'>('decks');
+  const [tab, setTab] = useState<'decks' | 'observatory' | 'templates' | 'search'>('decks');
   const [decks, setDecks] = useState<DeckSummary[]>([]);
   const [decksLoading, setDecksLoading] = useState(true);
   const [decksErr, setDecksErr] = useState<string | null>(null);
@@ -46,6 +47,9 @@ export const App: React.FC = () => {
         )}
         {tab === 'templates' && (
           <TemplateStudio templates={templates} loading={templatesLoading} error={templatesErr} onUploadTemplate={async (n, desc, f) => { const fd = new FormData(); fd.append('name', n); if (desc) fd.append('description', desc); if (f) fd.append('file', f); await api.templates.create(fd); loadTemplates(); }} />
+        )}
+        {tab === 'search' && (
+          <SearchView />
         )}
       </main>
       <QuickstartModal isOpen={quickstart} onClose={() => setQuickstart(false)} onSelectPreset={async (topic, count) => { const d = await api.decks.generateTopic({ topic, slide_count: count }); loadDecks(); setDeck(d); setTab('decks'); }} />

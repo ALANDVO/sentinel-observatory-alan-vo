@@ -1,4 +1,3 @@
-"""Slide evaluation engine: cognitive load, data fidelity, and MECE alignment metrics."""
 from __future__ import annotations
 import re
 from dataclasses import dataclass, field

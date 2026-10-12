@@ -1,4 +1,3 @@
-"""SQLAlchemy ORM models for Deck and Slide."""
 from __future__ import annotations
 import uuid
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text

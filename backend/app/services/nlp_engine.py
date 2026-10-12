@@ -1,4 +1,3 @@
-"""NLP Engine: deterministic outline decomposition, topic categorization, and keyword extraction."""
 from __future__ import annotations
 import hashlib, re
 from dataclasses import dataclass, field

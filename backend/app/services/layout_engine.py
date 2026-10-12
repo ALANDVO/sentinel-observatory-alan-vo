@@ -1,4 +1,3 @@
-"""Smart layout engine: dynamic bounding boxes, font scaling, and column layouts for PPTX slides."""
 from __future__ import annotations
 import math
 from dataclasses import dataclass, field

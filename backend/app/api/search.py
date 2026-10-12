@@ -1,4 +1,3 @@
-"""Cross-deck search API (unified)."""
 from __future__ import annotations
 from typing import Any
 from fastapi import APIRouter, Depends, Query

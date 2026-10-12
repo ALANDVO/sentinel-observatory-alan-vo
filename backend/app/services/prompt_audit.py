@@ -1,4 +1,3 @@
-"""Prompt budget and multilingual dictionary audit engine. Resolves #304, #303, #302."""
 from __future__ import annotations
 import json, re, sys
 from dataclasses import dataclass, field

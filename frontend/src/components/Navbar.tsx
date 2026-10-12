@@ -2,8 +2,8 @@ import React from 'react';
 import { UserInfo } from '../types';
 interface NavbarProps {
   user: UserInfo | null;
-  activeTab: 'decks' | 'observatory' | 'templates';
-  onSelectTab: (tab: 'decks' | 'observatory' | 'templates') => void;
+  activeTab: 'decks' | 'observatory' | 'templates' | 'search';
+  onSelectTab: (tab: 'decks' | 'observatory' | 'templates' | 'search') => void;
   onLogout: () => void;
   onOpenQuickstart?: () => void;
 }
@@ -19,7 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, onSelectTab, on
     <nav className="navbar-nav">
       <button className={`nav-link ${activeTab === 'decks' ? 'active' : ''}`} onClick={() => onSelectTab('decks')}>Presentations</button>
       <button className={`nav-link ${activeTab === 'observatory' ? 'active' : ''}`} onClick={() => onSelectTab('observatory')}>Slide Observatory</button>
-      <button className={`nav-link ${activeTab === 'templates' ? 'active' : ''}`} onClick={() => onSelectTab('templates')}>Template Studio</button>
+      <button className={`nav-link ${activeTab === 'search' ? 'active' : ''}`} onClick={() => onSelectTab('search')}>Search</button>
       {onOpenQuickstart && (
         <button className="nav-link" onClick={onOpenQuickstart} style={{ color: '#0f3c78', fontWeight: 600 }}>🚀 Quickstart</button>
       )}

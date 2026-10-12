@@ -1,4 +1,3 @@
-"""SQLAlchemy ORM models for Evaluation."""
 from __future__ import annotations
 import uuid
 from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, String, Text

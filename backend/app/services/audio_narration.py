@@ -1,4 +1,3 @@
-"""Audio narration synthesis engine for slide speaker notes."""
 from __future__ import annotations
 import io, json, math, re, struct, sys, wave
 from dataclasses import dataclass, field

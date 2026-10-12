@@ -63,9 +63,9 @@ class SS:
         return rs[off:off+lim], tot
     def sa(self, db, q, limit=20, offset=0, f=None):
         f = f or {}
-        d = {"Deck": (["title","topic","source_text"], "deck", "title", "source_text", {"source_type":"source_type","status":"status","slide_count":"slide_count","created_at":"created_at"}),
-             "Slide": (["title","body_text","speaker_notes"], "slide", "title", "body_text", {"deck_id":"deck_id","position":"position","slide_type":"slide_type"}),
-             "Evaluation": (["eval_type","llm_advisory","raw_result"], "evaluation", "eval_type", "llm_advisory", {"deck_id":"deck_id","eval_type":"eval_type","overall_cognitive_score":"overall_cognitive_score","data_fidelity_precision":"data_fidelity_precision","created_at":"created_at"})}
+        d = {"Deck": (["title", "topic", "source_text"], "deck", "title", "source_text", {"source_type": "source_type", "status": "status", "slide_count": "slide_count", "created_at": "created_at"}),
+             "Slide": (["title", "body_text", "speaker_notes"], "slide", "title", "body_text", {"deck_id": "deck_id", "position": "position", "slide_type": "slide_type"}),
+             "Evaluation": (["eval_type", "llm_advisory"], "evaluation", "eval_type", "llm_advisory", {"deck_id": "deck_id", "eval_type": "eval_type", "overall_cognitive_score": "overall_cognitive_score", "data_fidelity_precision": "data_fidelity_precision", "created_at": "created_at"})}
         fl = [f.get("source_type"), f.get("status"), f.get("author_sub")], [f.get("deck_id"), f.get("slide_type")], [f.get("deck_id"), f.get("eval_type")]
         ar = []; tot = 0
         for idx, (M, (fs, rt, tf, bf, mf)) in enumerate(zip([Deck, Slide, Evaluation], d.values())):

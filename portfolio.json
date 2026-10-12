@@ -17,6 +17,6 @@
     "gemini",
     "ollama"
   ],
-  "version": "1.10.0",
+  "version": "1.15.0",
   "status": "work-in-progress"
 }

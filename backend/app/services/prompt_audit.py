@@ -4,8 +4,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 _WIN = {"gpt-3.5-turbo": 4096, "gpt-4": 8192, "gpt-4o": 128000, "gpt-4o-mini": 128000, "claude-3-haiku-20240307": 200000, "gemini-1.5-flash": 1048576, "gemini-1.5-pro": 2097152}
-_SUF, _CJK, _PH = re.compile(r"_(?:zh|en|ja|fr|de|es|pt|ko|ar)(?:_[a-z]{2})?$", re.I), re.compile(r"[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]"), re.compile(r"\{([a-zA-Z0-9_]+)\}")
-_MD_H, _MD_C, _MD_L, _MD_T = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE), re.compile(r"^```", re.MULTILINE), re.compile(r"\[([^\]]+)\]\(([^)]+)\)"), re.compile(r"^\|.+\|$", re.MULTILINE)
+_SUF = re.compile(r"_(?:zh|en|ja|fr|de|es|pt|ko|ar)(?:_[a-z]{2})?$", re.I)
+_CJK = re.compile(r"[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]")
+_PH = re.compile(r"\{([a-zA-Z0-9_]+)\}")
+_MD_H = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
+_MD_C = re.compile(r"^```", re.MULTILINE)
+_MD_L = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+_MD_T = re.compile(r"^\|.+\|$", re.MULTILINE)
 def _est(t: str) -> int:
     c = len(_CJK.findall(t)); return int((len(t) - c) / 4 + c / 2)
 _estimate_tokens = _est
@@ -18,8 +23,7 @@ class PromptAuditReport:
     def to_dict(self) -> dict: return {"passed": self.passed, "total_tokens_estimated": self.total_tokens_estimated, "model_window": self.model_window, "findings": [vars(f) for f in self.findings]}
 class PromptAuditService:
     def audit_slide_content(self, slides: list[dict[str, Any]], model: str = "gpt-4o-mini", locale_keys_per_slide: list[dict[str, str]] | None = None) -> PromptAuditReport:
-        fs: list[AuditFinding] = []
-        tx = " ".join(f"{s.get('title') or ''} {s.get('body_text') or ''} {s.get('speaker_notes') or ''}" for s in slides)
+        fs, tx = [], " ".join(f"{s.get('title') or ''} {s.get('body_text') or ''} {s.get('speaker_notes') or ''}" for s in slides)
         t, w = _est(tx), _WIN.get(model)
         if w and t > int(w * 0.8): fs.append(AuditFinding("token_budget_80pct", "warning", f"Tokens ({t}) > 80% of {model} window ({w})."))
         if locale_keys_per_slide:
@@ -31,7 +35,7 @@ class PromptAuditService:
             if (nt := _est(s.get("speaker_notes") or "")) > 500: fs.append(AuditFinding("speaker_notes_token_limit", "warning", f"Slide {i} notes ({nt} tokens) > 500.", location=f"slide_id={s.get('id', i)}"))
         return PromptAuditReport(not any(x.severity == "error" for x in fs), t, w, fs)
     def audit_locale_dictionary(self, dictionaries: dict[str, dict[str, str]], referenced_keys: list[str] | set[str] | None = None) -> PromptAuditReport:
-        fs: list[AuditFinding] = []
+        fs = []
         if not dictionaries: return PromptAuditReport(True, 0, None)
         ls = list(dictionaries.keys()); rd, rks = dictionaries[ls[0]], set(dictionaries[ls[0]].keys())
         for loc in ls[1:]:
@@ -52,7 +56,7 @@ class PromptAuditService:
                 if k not in rs: fs.append(AuditFinding("unused_dictionary_key", "warning", f"Key {k} not referenced", location=f"key={k}"))
         return PromptAuditReport(not any(x.severity == "error" for x in fs), _est(str(dictionaries)), None, fs)
     def audit_markdown_translation_drift(self, source_md: str, target_md: str, source_locale: str = "en", target_locale: str = "zh") -> PromptAuditReport:
-        fs: list[AuditFinding] = []
+        fs = []
         sh, th = [m.group(1) for m in _MD_H.finditer(source_md)], [m.group(1) for m in _MD_H.finditer(target_md)]
         if len(sh) != len(th): fs.append(AuditFinding("heading_count_drift", "warning", f"Heading drift: {source_locale}={len(sh)}, {target_locale}={len(th)}"))
         sc, tc = len(_MD_C.findall(source_md)) // 2, len(_MD_C.findall(target_md)) // 2
@@ -66,7 +70,7 @@ class PromptAuditService:
             if h.startswith("#") and len(h) > 1 and h[1:].lower() not in ts: fs.append(AuditFinding("unresolved_anchor_reference", "error", f"Anchor '{h}' missing in {target_locale}", location=f"href={h}"))
         return PromptAuditReport(not any(x.severity == "error" for x in fs), _est(source_md) + _est(target_md), None, fs)
     def audit_prompt_template_rules(self, templates: list[dict[str, Any]]) -> PromptAuditReport:
-        fs: list[AuditFinding] = []
+        fs = []
         for i, tm in enumerate(templates):
             tr, pt = tm.get("trigger") or "", tm.get("prompt") or ""
             if _CJK.search(tr) and not tm.get("is_multilingual"): fs.append(AuditFinding("bilingual_trigger_pollution", "error", f"Trigger '{tr[:30]}' has CJK chars", location=f"index={i}"))

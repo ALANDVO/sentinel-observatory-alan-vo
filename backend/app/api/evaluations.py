@@ -45,8 +45,7 @@ def export_comparison_markdown(ids: str = Query(...), db: Session = _D, u: dict 
     if len(evs) != len(id_list): raise HTTPException(404, f"Evaluations not found: {', '.join(set(id_list) - {e.id for e in evs})}")
     return Response(content=_bm(evs), media_type="text/markdown", headers={"Content-Disposition": f'attachment; filename="evaluation_comparison_{evs[0].id[:8]}_et_al.md"'})
 _K = ["id","deck_id","eval_type","created_at","overall_cognitive_score","information_density_score","bullet_brevity_score","hierarchy_balance_score","readability_grade","mece_alignment_score","data_fidelity_precision","data_fidelity_recall","attribution_pass","prompt_audit_pass"]
-_M = [("overall_cognitive_score","Overall Cognitive Score"),("information_density_score","Information Density"),("bullet_brevity_score","Bullet Brevity"),("hierarchy_balance_score","Hierarchy Balance"),("readability_grade","Readability Grade (lower is better)"),("mece_alignment_score","MECE Alignment"),("data_fidelity_precision","Data Fidelity Precision"),("data_fidelity_recall","Data Fidelity Recall")]
-_MD = [("overall_cognitive_score","Overall Cognitive Score"),("information_density_score","Information Density"),("bullet_brevity_score","Bullet Brevity"),("hierarchy_balance_score","Hierarchy Balance"),("readability_grade","Readability Grade"),("mece_alignment_score","MECE Alignment"),("data_fidelity_precision","Data Fidelity Precision"),("data_fidelity_recall","Data Fidelity Recall"),("attribution_pass","Attribution Guard"),("prompt_audit_pass","Prompt Audit")]
+_M = [("overall_cognitive_score","Overall Cognitive Score"),("information_density_score","Information Density"),("bullet_brevity_score","Bullet Brevity"),("hierarchy_balance_score","Hierarchy Balance"),("readability_grade","Readability Grade (lower is better)"),("mece_alignment_score","MECE Alignment"),("data_fidelity_precision","Data Fidelity Precision"),("data_fidelity_recall","Data Fidelity Recall"),("attribution_pass","Attribution Guard"),("prompt_audit_pass","Prompt Audit")]
 def _bc(evs: list[Evaluation]) -> dict:
     comp = {"evaluations": [], "comparison": {}}
     for ev in evs:
@@ -54,8 +53,10 @@ def _bc(evs: list[Evaluation]) -> dict:
         d["created_at"] = ev.created_at.isoformat() if ev.created_at else None
         d["llm_advisory"] = bool(ev.llm_advisory)
         comp["evaluations"].append(d)
+    numeric_keys = {"overall_cognitive_score", "information_density_score", "bullet_brevity_score", "hierarchy_balance_score", "readability_grade", "mece_alignment_score", "data_fidelity_precision", "data_fidelity_recall"}
     for key, label in _M:
-        vals = [(e["id"], e[key]) for e in comp["evaluations"] if e[key] is not None]
+        if key not in numeric_keys: continue
+        vals = [(e["id"], float(e[key])) for e in comp["evaluations"] if e[key] is not None]
         if vals:
             rev = key == "readability_grade"
             best = min(vals, key=lambda x: x[1]) if rev else max(vals, key=lambda x: x[1])
@@ -66,7 +67,7 @@ def _bm(evs: list[Evaluation]) -> str:
     L = ["# Evaluation Comparison Report", f"**Generated:** {datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')}", f"**Compared:** {len(evs)} evaluations", "", "## Summary Table"]
     L.append("| Metric | " + " | ".join(f"{e.id[:8]} ({e.eval_type})" for e in evs) + " |")
     L.append("| --- | " + " | ".join("---" for _ in evs) + " |")
-    for key, label in _MD:
+    for key, label in _M:
         row = [label]
         for e in evs:
             val = getattr(e, key)
@@ -75,10 +76,9 @@ def _bm(evs: list[Evaluation]) -> str:
             elif isinstance(val, bool): row.append("Yes" if val else "No")
             else: row.append(str(val))
         L.append("| " + " | ".join(row) + " |")
-    L.append(""); L.append("## Per-Evaluation Details")
+    L += ["", "## Per-Evaluation Details"]
     for ev in evs:
-        L.append(f"### Evaluation `{ev.id}` (Deck: {ev.deck_id}, Type: {ev.eval_type})")
-        L.append(f"- **Created:** {ev.created_at.isoformat() if ev.created_at else 'N/A'}")
+        L += [f"### Evaluation `{ev.id}` (Deck: {ev.deck_id}, Type: {ev.eval_type})", f"- **Created:** {ev.created_at.isoformat() if ev.created_at else 'N/A'}"]
         if ev.overall_cognitive_score is not None:
             L += [f"- **Overall Cognitive:** {ev.overall_cognitive_score:.3f}", f"- **Density:** {ev.information_density_score or 'N/A'}", f"- **Brevity:** {ev.bullet_brevity_score or 'N/A'}", f"- **Hierarchy:** {ev.hierarchy_balance_score or 'N/A'}", f"- **Readability:** {ev.readability_grade or 'N/A'}", f"- **MECE:** {ev.mece_alignment_score or 'N/A'}"]
         if ev.data_fidelity_precision is not None:
@@ -137,21 +137,24 @@ def ej(eid: str, db: Session = _D, u: dict = _U) -> Response:
 @router.get("/{eid}/export/markdown")
 def em(eid: str, db: Session = _D, u: dict = _U) -> Response:
     if not (ev := db.query(Evaluation).filter(Evaluation.id == eid).first()): raise HTTPException(404, f"Evaluation {eid!r} not found")
-    e = ev.eval_type
-    L = [f"# Evaluation Report: {e.title()}", f"**ID:** {ev.id}", f"**Deck:** {ev.deck_id}", f"**Created:** {ev.created_at.isoformat() if ev.created_at else 'N/A'}", f"**Model:** {ev.llm_provider_used or 'N/A'}", f"**Advisory:** {'Yes' if ev.llm_advisory else 'No'}", ""]
+    e, L = ev.eval_type, [f"# Evaluation Report: {e.title()}", f"**ID:** {ev.id}", f"**Deck:** {ev.deck_id}", f"**Created:** {ev.created_at.isoformat() if ev.created_at else 'N/A'}", f"**Model:** {ev.llm_provider_used or 'N/A'}", f"**Advisory:** {'Yes' if ev.llm_advisory else 'No'}", ""]
+    def S(t: str, i: list[tuple[str, Any]]):
+        L.append(f"## {t}")
+        for k, v in i:
+            if v is not None: L.append(f"- **{k}:** {v}")
+        L.append("")
     if e in ("full", "cognitive_load"):
-        L += ["## Cognitive Load", f"- **Overall:** {ev.overall_cognitive_score or 'N/A'}", f"- **Density:** {ev.information_density_score or 'N/A'}", f"- **Brevity:** {ev.bullet_brevity_score or 'N/A'}", f"- **Hierarchy:** {ev.hierarchy_balance_score or 'N/A'}", f"- **Readability:** {ev.readability_grade or 'N/A'}", f"- **MECE:** {ev.mece_alignment_score or 'N/A'}", "", "## Slides"]
+        S("Cognitive Load", [("Overall", ev.overall_cognitive_score), ("Density", ev.information_density_score), ("Brevity", ev.bullet_brevity_score), ("Hierarchy", ev.hierarchy_balance_score), ("Readability", ev.readability_grade), ("MECE", ev.mece_alignment_score)])
         for s in (ev.raw_result or {}).get("slide_scores", []):
-            L += [f"### Slide {s.get('position','?')}: {s.get('title','Untitled')}", f"- Density: {s.get('information_density','N/A')}", f"- Brevity: {s.get('bullet_brevity','N/A')}", f"- Hierarchy: {s.get('hierarchy_balance','N/A')}", f"- Readability: {s.get('readability_grade','N/A')}", f"- Notes: {', '.join(s.get('notes',[])) or 'None'}", ""]
+            S(f"Slide {s.get('position','?')}: {s.get('title','Untitled')}", [("Density", s.get('information_density')), ("Brevity", s.get('bullet_brevity')), ("Hierarchy", s.get('hierarchy_balance')), ("Readability", s.get('readability_grade')), ("Notes", ', '.join(s.get('notes',[])) or 'None')])
         for o in (ev.raw_result or {}).get("observations", []): L.append(f"- {o}")
         L.append("")
-    if e in ("full", "data_fidelity"):
-        L += ["## Data Fidelity", f"- **Claims:** {ev.numeric_claims_found or 'N/A'}", f"- **Verified:** {ev.claims_verified or 'N/A'}", f"- **Precision:** {ev.data_fidelity_precision or 'N/A'}", f"- **Recall:** {ev.data_fidelity_recall or 'N/A'}", ""]
+    if e in ("full", "data_fidelity"): S("Data Fidelity", [("Claims", ev.numeric_claims_found), ("Verified", ev.claims_verified), ("Precision", ev.data_fidelity_precision), ("Recall", ev.data_fidelity_recall)])
     if e in ("full", "attribution"):
-        L += ["## Attribution", f"- **Passed:** {'Yes' if ev.attribution_pass == 'pass' else 'No'}", ""]
+        S("Attribution", [("Passed", "Yes" if ev.attribution_pass == "pass" else "No")])
         for d in ev.attribution_diagnostics or []: L += [f"### {d.get('code','UNKNOWN')}: {d.get('message','')}", f"- Severity: {d.get('severity','')}", f"- Fix: {d.get('remediation','')}", ""]
     if e in ("full", "prompt_audit"):
-        L += ["## Prompt Audit", f"- **Passed:** {'Yes' if ev.prompt_audit_pass == 'pass' else 'No'}", ""]
+        S("Prompt Audit", [("Passed", "Yes" if ev.prompt_audit_pass == "pass" else "No")])
         for f in ev.prompt_audit_findings or []: L.append(f"- {f.get('type','Issue')}: {f.get('message','')}")
         L.append("")
     if ev.llm_advisory: L += ["## LLM Advisory", ev.llm_advisory, ""]

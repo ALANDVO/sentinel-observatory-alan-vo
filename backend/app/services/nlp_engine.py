@@ -13,7 +13,7 @@ _S = frozenset("a an the and or but in on at to for of with by from is are was w
 def _tok(t: str) -> list[str]: return re.findall(r"[a-z][a-z0-9'\-]*[a-z0-9]|[a-z]", t.lower())
 _tokenize = _tok
 def extract_keywords(t: str, top_k: int = 15) -> list[str]:
-    f: dict[str, int] = {}
+    f = {}
     for w in _tok(t):
         if w not in _S and len(w) > 3: f[w] = f.get(w, 0) + 1
     return [k for k, _ in sorted(f.items(), key=lambda x: -x[1])[:top_k]]

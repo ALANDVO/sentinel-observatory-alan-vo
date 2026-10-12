@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import { DeckSummary, EvaluationOut, EvaluationComparisonResponse } from '../types';
 import { api } from '../api';
-
-const BASE = '/api';
-const evalExportJson = (id: string) => `${BASE}/evaluations/${id}/export/json`;
-const evalExportMarkdown = (id: string) => `${BASE}/evaluations/${id}/export/markdown`;
-
+const BASE = '/api', evalExportJson = (id: string) => `${BASE}/evaluations/${id}/export/json`, evalExportMarkdown = (id: string) => `${BASE}/evaluations/${id}/export/markdown`;
 interface Props { decks: DeckSummary[]; evaluations: EvaluationOut[]; loading: boolean; selectedDeckId: string | null; onSelectDeck: (id: string) => void; onRunEval: (id: string, opt: { eval_type: string; request_llm_advisory: boolean }) => Promise<void>; }
-
-const GS = (v: number | null) => v == null ? <span className="tag">N/A</span> : (() => { const p = Math.round(v * 100); return <span className={`score-badge ${v >= 0.8 ? 'badge-good' : v >= 0.6 ? 'badge-med' : 'badge-low'}`}>{p}%</span>; })();
+const GS = (v: number | null) => v == null ? <span className="tag">N/A</span> : <span className={`score-badge ${v >= 0.8 ? 'badge-good' : v >= 0.6 ? 'badge-med' : 'badge-low'}`}>{Math.round(v * 100)}%</span>;
 
 
 export const ObservatoryView: React.FC<Props> = ({ decks, evaluations, loading, selectedDeckId, onSelectDeck, onRunEval }) => {
@@ -21,8 +16,8 @@ export const ObservatoryView: React.FC<Props> = ({ decks, evaluations, loading, 
   const aid = selectedDeckId || (decks[0]?.id ?? null);
   const le = evaluations.find(e => e.deck_id === aid) || null;
   const hr = async () => { if (!aid) return; setRu(true); setRe(null); try { await onRunEval(aid, { eval_type: et, request_llm_advisory: rl }); } catch (err: unknown) { setRe(err instanceof Error ? err.message : 'Evaluation run failed'); } finally { setRu(false); } };
-  const hc = async () => { if (selectedEvalIds.length < 2) { setCompError('Select at least 2 evaluations to compare'); return; } setCompLoading(true); setCompError(null); setComparison(null); try { const data = await api.evaluations.compare(selectedEvalIds); setComparison(data); } catch (err: unknown) { setCompError(err instanceof Error ? err.message : 'Comparison failed'); } finally { setCompLoading(false); } };
-  const toggleEval = (eid: string) => { setSelectedEvalIds(prev => prev.includes(eid) ? prev.filter(x => x !== eid) : [...prev, eid]); };
+  const hc = async () => { if (selectedEvalIds.length < 2) { setCompError('Select at least 2 evaluations to compare'); return; } setCompLoading(true); setCompError(null); setComparison(null); try { setComparison(await api.evaluations.compare(selectedEvalIds)); } catch (err: unknown) { setCompError(err instanceof Error ? err.message : 'Comparison failed'); } finally { setCompLoading(false); } };
+  const toggleEval = (eid: string) => setSelectedEvalIds(p => p.includes(eid) ? p.filter(x => x !== eid) : [...p, eid]);
   return (
     <div className="observatory-container">
       <div className="section-header"><div><h2>Slide-Intelligence Observatory</h2><p className="section-desc">Cognitive load benchmarking, numeric claim verification, and attribution diagnostics.</p></div></div>

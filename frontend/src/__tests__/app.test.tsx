@@ -3,10 +3,43 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Navbar } from '../components/Navbar';
 import { DeckDashboard } from '../components/DeckDashboard';
-import { ObservatoryView } from '../components/ObservatoryView';
 import { TemplateStudio } from '../components/TemplateStudio';
 import { DeckSummary, EvaluationOut, TemplateOut, UserInfo } from '../types';
-
+vi.mock('../api', () => ({
+  api: {
+    auth: {
+      getConfig: vi.fn(),
+      getMe: vi.fn(),
+    },
+    decks: {
+      list: vi.fn(),
+      get: vi.fn(),
+      generateTopic: vi.fn(),
+      generateDocument: vi.fn(),
+      delete: vi.fn(),
+      addSlide: vi.fn(),
+      exportPptxUrl: vi.fn(),
+      synthesizeNarration: vi.fn(),
+      narrationAudioUrl: vi.fn(),
+      slideNarrationAudioUrl: vi.fn(),
+    },
+    search: {
+      unified: vi.fn(),
+    },
+    evaluations: {
+      list: vi.fn(),
+      get: vi.fn(),
+      run: vi.fn(),
+      exportJson: vi.fn((id: string) => `/api/evaluations/${id}/export/json`),
+      exportMarkdown: vi.fn((id: string) => `/api/evaluations/${id}/export/markdown`),
+    },
+    templates: {
+      list: vi.fn(),
+      get: vi.fn(),
+      create: vi.fn(),
+    },
+  },
+}));
 describe('Navbar Component', () => {
   it('renders branding and user role tags', () => {
     const mockUser: UserInfo = {
@@ -94,7 +127,10 @@ describe('DeckDashboard Component', () => {
 });
 
 describe('ObservatoryView Component', () => {
-  it('renders cognitive metrics, score badges, and attribution guard status', () => {
+  it('renders cognitive metrics, score badges, and attribution guard status', async () => {
+    const { ObservatoryView } = await import('../components/ObservatoryView');
+    const { api } = await import('../api');
+
     const sampleDecks: DeckSummary[] = [
       {
         id: 'deck-1',
@@ -130,6 +166,9 @@ describe('ObservatoryView Component', () => {
       created_at: new Date().toISOString(),
     };
 
+    vi.spyOn(api.evaluations, 'exportJson').mockReturnValue('/api/evaluations/eval-1/export/json');
+    vi.spyOn(api.evaluations, 'exportMarkdown').mockReturnValue('/api/evaluations/eval-1/export/markdown');
+
     render(
       <ObservatoryView
         decks={sampleDecks}
@@ -146,6 +185,9 @@ describe('ObservatoryView Component', () => {
     expect(screen.getByText('88%')).toBeInTheDocument();
     expect(screen.getByText('Grade 8.5')).toBeInTheDocument();
     expect(screen.getByText('PASS')).toBeInTheDocument();
+    expect(screen.getByText('Export Evaluation Report')).toBeInTheDocument();
+    expect(screen.getByText('📄 Download JSON')).toBeInTheDocument();
+    expect(screen.getByText('📝 Download Markdown')).toBeInTheDocument();
   });
 });
 

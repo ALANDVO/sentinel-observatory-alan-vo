@@ -56,6 +56,8 @@ export const api = {
     list: (p?: { deck_id?: string; eval_type?: string; skip?: number; limit?: number }) => req<EvaluationListResponse>(`/evaluations${qs(p)}`),
     get: (id: string) => req<EvaluationOut>(`/evaluations/${id}`),
     run: (id: string, b: { eval_type: string; model?: string; request_llm_advisory?: boolean }) => jpost(`/evaluations/decks/${id}/run`, b) as Promise<EvaluationOut>,
+    exportJson: (id: string) => `${BASE}/evaluations/${id}/export/json`,
+    exportMarkdown: (id: string) => `${BASE}/evaluations/${id}/export/markdown`,
   },
   templates: {
     list: (p?: { skip?: number; limit?: number }) => req<TemplateListResponse>(`/templates${qs(p)}`),

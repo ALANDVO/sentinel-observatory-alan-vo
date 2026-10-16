@@ -3,7 +3,7 @@
 > Work in progress. This checkpoint may be incomplete or fail tests. See PLAN.md and STATUS.md before use.
 
 
-Current version: `1.19.0`.
+Current version: `1.23.0`.
 
 Sentinel Observatory turns documents or topics into native PowerPoint decks through deterministic AI/ML workflows — evaluating cognitive load, data grounding, and structural quality before compiling real `.pptx` files with native shapes, charts, and speaker notes.
 

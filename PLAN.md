@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-evaluation-comparison
+version-sync-release-readiness
 
 ## Roadmap
 
@@ -26,7 +26,7 @@ Status: done
 Acceptance:
 - Maintain first-party source code strictly within 50,000–150,000 bytes budget and pass preflight inspection
 
-Implementation: `backend/app/services/pptx_compiler.py`, `backend/app/api/decks.py`, `backend/app/services/evaluator.py`, `backend/app/services/eval_benchmark.py`
+Implementation: `backend/app/services/pptx_compiler.py`, `backend/app/api/decks.py`, `backend/app/services/evaluator.py`
 
 Tests: `backend/tests/test_pptx_compiler.py`, `backend/tests/test_deck_generation.py`, `backend/tests/test_evaluations.py`
 
@@ -121,4 +121,18 @@ Acceptance:
 Implementation: `backend/app/api/evaluations.py`, `frontend/src/components/ObservatoryView.tsx`, `frontend/src/api.ts`
 
 Tests: `backend/tests/test_evaluations.py`, `frontend/src/__tests__/app.test.tsx`
+
+### version-sync-release-readiness — Version Metadata Synchronization and Release-Readiness Hardening
+
+Status: done
+
+Acceptance:
+- Product version 1.23.0 agreed across VERSION, pyproject.toml, portfolio.json, frontend package.json and package-lock.json
+- portfolio.json summary describes the implemented NLP/AI evaluation workflow
+- backend/tests/test_version.py asserts cross-file version consistency
+- Orphaned benchmark_decks.json and unused re-exports removed
+
+Implementation: `VERSION`, `pyproject.toml`, `frontend/package.json`, `frontend/package-lock.json`, `portfolio.json`, `backend/tests/test_version.py`
+
+Tests: `backend/tests/test_version.py`
 

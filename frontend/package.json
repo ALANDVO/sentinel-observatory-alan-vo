@@ -1,7 +1,7 @@
 {
   "name": "sentinel-observatory-frontend",
   "private": true,
-  "version": "1.15.0",
+  "version": "1.23.0",
   "type": "module",
   "author": "Alan Vo <alanvo@gmail.com>",
   "scripts": {

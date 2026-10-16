@@ -1,1 +1,2 @@
-from backend.app.services.search_service import SS as SearchService, R as SearchResultItem, SR as SearchResponse
+"""Backend service implementations package."""
+from backend.app.services.search_service import SS as SearchService

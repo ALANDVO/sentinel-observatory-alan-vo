@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.23.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.23.0 — version metadata synchronization and release-readiness hardening
+
+- Synchronized product version to 1.23.0 across VERSION, pyproject.toml, README.md, portfolio.json, frontend package.json and package-lock.json (fixing drift where artifacts reported 1.15.0 / 1.19.0 / 1.22.0).
+- Replaced placeholder portfolio.json summary with an accurate one-sentence description of the deterministic NLP evaluation pipeline.
+- Added backend/tests/test_version.py asserting cross-file version consistency.
+- Removed orphaned benchmark_decks.json and unused re-exports.
+- Preflight source budget remains over (~158 KB > 150 KB) in a deliberately-minimized codebase; see STATUS.md.
+
 ## 1.22.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from backend.app.core.database import get_db
 from backend.app.core.security import require_role, Role
-from backend.app.services.search_service import SS, SR, R, d
+from backend.app.services.search_service import SS, d
 router = APIRouter(prefix="/search", tags=["search"])
 _DB = Depends(get_db)
 _VW = Depends(require_role(Role.VIEWER))

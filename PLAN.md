@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-version-sync-release-readiness
+pptx-compiler-cli
 
 ## Roadmap
 
@@ -135,4 +135,17 @@ Acceptance:
 Implementation: `VERSION`, `pyproject.toml`, `frontend/package.json`, `frontend/package-lock.json`, `portfolio.json`, `backend/tests/test_version.py`
 
 Tests: `backend/tests/test_version.py`
+
+### pptx-compiler-cli — PPTX Compiler Standalone CLI
+
+Status: in_progress
+
+Acceptance:
+- pptx_compiler.py executes directly via CLI with JSON input file, supports --output for PPTX file and --json for base64-encoded JSON output
+- Fails closed on errors with actionable diagnostics printed to stderr
+- Supports template_path in input JSON for custom templates
+
+Implementation: `backend/app/services/pptx_compiler.py`
+
+Tests: `backend/tests/test_pptx_compiler.py`
 

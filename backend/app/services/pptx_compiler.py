@@ -91,3 +91,50 @@ class PptxCompiler:
         else: prs = Presentation(); prs.slide_width, prs.slide_height = SLIDE_WIDTH, SLIDE_HEIGHT
         for s in slides: _COMPILERS.get(s.get("slide_type", "content"), _ccs)(prs, s)
         out = io.BytesIO(); prs.save(out); return out.getvalue()
+import argparse
+import base64
+import json
+import sys
+
+
+def main(argv: list[str] | None = None) -> int:
+    p = argparse.ArgumentParser(description="PPTX Compiler CLI")
+    p.add_argument("--input", required=True, help="JSON file with deck data: {\"title\": str, \"slides\": [...], \"template\": str?}")
+    p.add_argument("--output", required=True, help="Output PPTX file path")
+    p.add_argument("--json", action="store_true", help="Output base64-encoded PPTX as JSON to stdout")
+    args = p.parse_args(argv)
+
+    try:
+        with open(args.input, "r") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        sys.stderr.write(f"Failed to read input: {e}\n")
+        return 1
+
+    title = data.get("title", "Deck")
+    slides = data.get("slides", [])
+    template_path = data.get("template")
+
+    compiler = PptxCompiler()
+    try:
+        pptx_bytes = compiler.compile_deck(title, slides, template_path=template_path)
+    except Exception as e:
+        sys.stderr.write(f"Compilation failed: {e}\n")
+        return 1
+
+    if args.json:
+        sys.stdout.write(json.dumps({"pptx_base64": base64.b64encode(pptx_bytes).decode("ascii"), "output": args.output}) + "\n")
+    else:
+        try:
+            with open(args.output, "wb") as f:
+                f.write(pptx_bytes)
+            sys.stdout.write(f"Written {len(pptx_bytes)} bytes to {args.output}\n")
+        except OSError as e:
+            sys.stderr.write(f"Failed to write output: {e}\n")
+            return 1
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

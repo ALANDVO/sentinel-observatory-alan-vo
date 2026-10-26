@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "version-sync-release-readiness",
+  "current_feature": "pptx-compiler-cli",
   "features": [
     {
       "id": "attribution-guard-cli",
@@ -182,6 +182,22 @@
       ],
       "tests": [
         "backend/tests/test_version.py"
+      ]
+    },
+    {
+      "id": "pptx-compiler-cli",
+      "title": "PPTX Compiler Standalone CLI",
+      "status": "in_progress",
+      "acceptance": [
+        "pptx_compiler.py executes directly via CLI with JSON input file, supports --output for PPTX file and --json for base64-encoded JSON output",
+        "Fails closed on errors with actionable diagnostics printed to stderr",
+        "Supports template_path in input JSON for custom templates"
+      ],
+      "implementation": [
+        "backend/app/services/pptx_compiler.py"
+      ],
+      "tests": [
+        "backend/tests/test_pptx_compiler.py"
       ]
     }
   ]

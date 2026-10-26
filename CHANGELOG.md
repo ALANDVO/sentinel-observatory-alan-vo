@@ -1,8 +1,17 @@
 # Changelog
 
+## 1.24.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.23.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+- Added PPTX Compiler standalone CLI (`python -m backend.app.services.pptx_compiler`) accepting JSON input with deck title, slides array, and optional template_path; outputs PPTX file via --output or base64 JSON via --json flag. Fails closed with actionable stderr diagnostics.
+- Updated PLAN.md and feature-plan.json with new pptx-compiler-cli feature (in_progress).
+- All 194 backend tests pass, 6 frontend tests pass, frontend typecheck and build succeed.
+- Source code at ~167 KB (slight overrun from 150 KB budget, known from prior rounds).
 
 ## 1.23.0 — version metadata synchronization and release-readiness hardening
 

@@ -86,11 +86,21 @@ def _cps(prs: Presentation, d: dict[str, Any]) -> None:
 _COMPILERS = {"title": _cts, "content": _ccs, "chart": _cch, "table": _ctb, "kpi": _cks, "comparison": _ccp, "process": _cps}
 class PptxCompiler:
     def compile_deck(self, deck_title: str, slides: list[dict[str, Any]], template_bytes: bytes | None = None, template_path: str | None = None) -> bytes:
-        if template_bytes: prs = Presentation(io.BytesIO(template_bytes))
-        elif template_path and Path(template_path).is_file(): prs = Presentation(template_path)
-        else: prs = Presentation(); prs.slide_width, prs.slide_height = SLIDE_WIDTH, SLIDE_HEIGHT
-        for s in slides: _COMPILERS.get(s.get("slide_type", "content"), _ccs)(prs, s)
-        out = io.BytesIO(); prs.save(out); return out.getvalue()
+        if template_bytes:
+            prs = Presentation(io.BytesIO(template_bytes))
+        elif template_path:
+            template_path_obj = Path(template_path)
+            if not template_path_obj.is_file():
+                raise FileNotFoundError(f"Template file not found: {template_path}")
+            prs = Presentation(template_path)
+        else:
+            prs = Presentation()
+            prs.slide_width, prs.slide_height = SLIDE_WIDTH, SLIDE_HEIGHT
+        for s in slides:
+            _COMPILERS.get(s.get("slide_type", "content"), _ccs)(prs, s)
+        out = io.BytesIO()
+        prs.save(out)
+        return out.getvalue()
 import argparse
 import base64
 import json

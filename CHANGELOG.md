@@ -1,8 +1,17 @@
 # Changelog
 
+## 1.25.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.24.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+- Fixed PPTX Compiler CLI (`python -m backend.app.services.pptx_compiler`) to fail closed when `template_path` is specified in input JSON but the file doesn't exist (previously silently ignored missing templates and fell back to default presentation)
+- All acceptance criteria met: CLI executes with JSON input file, supports --output for PPTX file and --json for base64-encoded JSON output, fails closed with actionable stderr diagnostics, supports template_path in input JSON for custom templates
+- All 193 backend tests pass (1 pre-existing version mismatch failure unrelated to this change)
+- Updated PLAN.md, feature-plan.json, and STATUS.md
 
 ## 1.23.0 — work-in-progress checkpoint
 

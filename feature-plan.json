@@ -187,7 +187,7 @@
     {
       "id": "pptx-compiler-cli",
       "title": "PPTX Compiler Standalone CLI",
-      "status": "in_progress",
+      "status": "done",
       "acceptance": [
         "pptx_compiler.py executes directly via CLI with JSON input file, supports --output for PPTX file and --json for base64-encoded JSON output",
         "Fails closed on errors with actionable diagnostics printed to stderr",

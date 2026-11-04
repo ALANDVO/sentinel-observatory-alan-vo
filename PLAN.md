@@ -138,7 +138,7 @@ Tests: `backend/tests/test_version.py`
 
 ### pptx-compiler-cli — PPTX Compiler Standalone CLI
 
-Status: in_progress
+Status: done
 
 Acceptance:
 - pptx_compiler.py executes directly via CLI with JSON input file, supports --output for PPTX file and --json for base64-encoded JSON output

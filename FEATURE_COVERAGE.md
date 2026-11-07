@@ -37,3 +37,7 @@ Sentinel Observatory (`sentinel-observatory-alan-vo`) is an AI-powered presentat
 
 4. **Issue #302 & #303 (UI Translations Drift & Unused Dictionary Keys)**:
    - Built a verified i18n dictionary validator checking key parity across locales and ensuring zero orphaned keys.
+
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

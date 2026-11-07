@@ -149,3 +149,6 @@ Implementation: `backend/app/services/pptx_compiler.py`
 
 Tests: `backend/tests/test_pptx_compiler.py`
 
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

@@ -228,3 +228,7 @@ docker compose exec -T backend sqlite3 /app/data/sentinel.db < backup.sql
 ---
 
 Alan Vo | alanvo@gmail.com
+
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

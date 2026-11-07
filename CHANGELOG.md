@@ -15,3 +15,7 @@ Partial code published for continued development. Known issues: STATUS.md.
 - All 194 backend tests pass; 6 frontend tests pass.
 
 ## 1.24.0 — work-in-progress checkpoint
+
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

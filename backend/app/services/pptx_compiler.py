@@ -109,7 +109,7 @@ import sys
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="PPTX Compiler CLI")
-    p.add_argument("--input", required=True, help="JSON file with deck data: {\"title\": str, \"slides\": [...], \"template\": str?}")
+    p.add_argument("--input", required=True, help="JSON file with deck data: {\"title\": str, \"slides\": [...], \"template_path\": str?}")
     p.add_argument("--output", required=True, help="Output PPTX file path")
     p.add_argument("--json", action="store_true", help="Output base64-encoded PPTX as JSON to stdout")
     args = p.parse_args(argv)
@@ -123,7 +123,7 @@ def main(argv: list[str] | None = None) -> int:
 
     title = data.get("title", "Deck")
     slides = data.get("slides", [])
-    template_path = data.get("template")
+    template_path = data.get("template_path") or data.get("template")
 
     compiler = PptxCompiler()
     try:

@@ -1,12 +1,12 @@
 {
   "name": "sentinel-observatory-frontend",
   "private": true,
-  "version": "1.25.0",
+  "version": "1.26.0",
   "type": "module",
   "author": {
     "name": "Alan Vo",
     "email": "alanvo@gmail.com",
-    "url": "https://github.com/ALANDVO"
+    "url": "https://alanvo.net"
   },
   "scripts": {
     "dev": "vite",

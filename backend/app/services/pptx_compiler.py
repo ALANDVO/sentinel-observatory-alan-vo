@@ -97,7 +97,11 @@ class PptxCompiler:
             prs = Presentation()
             prs.slide_width, prs.slide_height = SLIDE_WIDTH, SLIDE_HEIGHT
         for s in slides:
-            _COMPILERS.get(s.get("slide_type", "content"), _ccs)(prs, s)
+            slide_type = s.get("slide_type", "content")
+            compiler = _COMPILERS.get(slide_type, _ccs)
+            if compiler is _ccs and slide_type not in _COMPILERS:
+                sys.stderr.write(f"Warning: Unknown slide_type '{slide_type}', using content slide compiler as fallback\n")
+            compiler(prs, s)
         out = io.BytesIO()
         prs.save(out)
         return out.getvalue()

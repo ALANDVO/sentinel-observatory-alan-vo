@@ -161,3 +161,19 @@ def test_content_slide_line_chart(compiler: PptxCompiler):
     chart_slide = prs.slides[0]
     chart_shapes = [s for s in chart_slide.shapes if s.has_chart]
     assert len(chart_shapes) == 1
+
+
+def test_unknown_slide_type_warnings(compiler: PptxCompiler, caplog):
+    """Warning is emitted to stderr when an unknown slide_type is encountered."""
+    import io
+    import sys
+    from unittest.mock import patch
+    
+    # Capture stderr output
+    with patch('sys.stderr') as mock_stderr:
+        slides = [{"slide_type": "unknown_type", "title": "Test", "bullets": ["test"]}]
+        compiler.compile_deck("Test Deck", slides)
+        
+        # Check that a warning was written to stderr
+        assert any("Unknown slide_type" in str(call) for call in mock_stderr.write.call_args_list), \
+            "Expected warning about unknown slide_type in stderr"

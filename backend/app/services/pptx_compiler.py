@@ -116,6 +116,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--input", required=True, help="JSON file with deck data: {\"title\": str, \"slides\": [...], \"template_path\": str?}")
     p.add_argument("--output", required=True, help="Output PPTX file path")
     p.add_argument("--json", action="store_true", help="Output base64-encoded PPTX as JSON to stdout")
+    p.add_argument("--version", action="version", version=f"%(prog)s {Path('VERSION').read_text().strip()}", help="Show version and exit")
     args = p.parse_args(argv)
 
     try:

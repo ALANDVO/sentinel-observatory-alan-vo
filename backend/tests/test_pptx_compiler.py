@@ -163,7 +163,7 @@ def test_content_slide_line_chart(compiler: PptxCompiler):
     assert len(chart_shapes) == 1
 
 
-def test_unknown_slide_type_warnings(compiler: PptxCompiler, caplog):
+def test_unknown_slide_type_warnings(compiler: PptxCompiler):
     """Warning is emitted to stderr when an unknown slide_type is encountered."""
     import io
     import sys

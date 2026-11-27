@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.30.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.29.1 — test hygiene and cleanup
+
+- Removed unused `caplog` fixture parameter from `test_unknown_slide_type_warnings` in `backend/tests/test_pptx_compiler.py` (dead weight deletion per maintenance guidelines). All 12 pptx-compiler tests pass unchanged.
+
 ## 1.29.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
